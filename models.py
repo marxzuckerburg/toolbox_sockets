@@ -55,18 +55,20 @@ class Embedding(object):
 		if hasattr(self,'fn_distnet'): return self.fn_distnet
 		return os.path.splitext(self.fn)[0]+'.distnet.txt'
 
+
 	@property
 	def distnet(self):
+		if not hasattr(self,'_distnet'): self._distnet=self.get_distnet()
+		return self._distnet
+
+	def get_distnet(self,n_top=None):
 		self.log('building network...')
-		G=nx.Graph()
-		for word in tqdm(all_words):
-			row = dfdist.loc[word].sort_values().iloc[1:n_top+1]
-			sim_rank=0
-			for word2,result in zip(row.index,row):
-				sim_rank+=1
-				G.add_edge(word,word2,weight=result,sim_rank=sim_rank)
-		
-		#self.log('saving network')
+		import networkx as nx
+		G=nx.DiGraph()
+		for d in tqdm(self.distdb.find()):
+			if n_top and d['sim_rank']>n_top: continue
+			G.add_edge(d['source'],d['target'],weight=d['weight'],sim_rank=d['sim_rank'])
+		return G
 
 	## DATA GENERATION
 
