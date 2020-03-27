@@ -1,0 +1,231 @@
+<html>
+  <head>
+    {% if title %}
+      <title>Cambridge Keydata Project: {{ title }}</title>
+    {% else %}
+      <title>Cambridge Keydata Project</title>
+    {% endif %}
+
+    <script src="/static/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script src="/static/d3.v5.js"></script>
+    <script>var d3v5 = window.d3; window.d3 = null;</script>
+    <script src="/static/d3.v4.js"></script>
+    <script>var d3v4 = window.d3; window.d3 = null;</script>
+    <script src="/static/d3.v3.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/static/progressbar.js"></script>
+    <script src="/static/jquery.magnific-popup.min.js"></script>
+    <script src="/static/math.min.js"></script>
+    <script src="/static/selectize.min.js"></script>
+    <script src="/static/jquery-ui.js"></script>
+    <script src="/static/chroma.min.js"></script>
+    
+
+    <!-- css -->
+    <link rel="stylesheet" href="/static/jquery-ui.css" />
+    <link rel="stylesheet" href="/static/magnific-popup.css">
+    <link rel="stylesheet" href="/static/selectize.css" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Ubuntu+Mono" /> -->
+    <!-- <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" /> -->
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Sans" />
+
+
+    <!-- custom -->
+    <script src="/static/base.js"></script>
+    <script type="text/javascript" src="/static/vector_math.js"></script>
+    <script type="text/javascript" src="/static/word.js"></script>
+    <script type="text/javascript" src="/static/word-client.js"></script>
+    <script type="text/javascript" src="/static/springy.js"></script>
+    <script type="text/javascript" src="/static/springyui.js"></script>
+    <script type="text/javascript" src="/static/drawing.js"></script>
+    <script type="text/javascript" src="/static/word_network.js"></script>
+
+
+
+  </head>
+  <body>
+    
+    
+
+    <!-- <div id="content"> -->
+
+<div id="sidebar">
+
+
+  <div id='header'>
+    <div id='title'>Cambridge Keydata Project</div>
+    <div id='subtitle'>Tools, resources, and research uniting computational linguistics with conceptual history</div>
+    <!-- <br/> -->
+    <!-- <a href="javascript:void(0)" class='popup_about'>About</a> | 
+    <a href="/word">Analyze word</a> | <a href="javascript:void(0)" onclick="get_corpus(\'COHA\')">Corpus</a> | <a href="https://docs.google.com/spreadsheets/d/1gH5pO3z-og2Pj3xYtZbB9U4uoaGDLN6hLgNtdHmFSMQ/edit?usp=sharing" target="_blank">Word Index</a> |
+    <a href="https://drive.google.com/drive/folders/1-ME4axybNlHX3HGvlLhDZJY7j10AbGaM?usp=sharing" target="_blank">Documents</a> |
+    <a href="/manifestos" target="_blank">Manifesto Project</a> -->
+  </div>  
+
+  <!-- <hr/> -->
+  <br/>
+
+  <h3>Analyze word(s)</h3>
+  
+  
+  <textarea id="analyze_word" type="textbox" name="word">value-importance
+</textarea>
+<!-- 
+value
+price
+rate
+worth
+importance
+value-price
+
+
+
+    value
+price
+worth
+importance
+merit
+excellence
+</textarea> -->
+    <!-- value
+importance
+price
+value-price
+value-importance -->
+
+
+  <div id="button_row">
+    <div style="float:left; font-size:10px"><button type="button" class='analyze_button' id='link_expand'>Auto-expand</button> by <input type="text" id="expand_n" value="1"></input></div>
+
+    <!-- <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button> -->
+  </div>
+
+  <br/><br/>
+
+  <h3>Method</h3>
+
+  <li><a href="javascript:void(0)" id='link_simnet' class='method_link'>Semantic Compounds</a></li>
+  <li><a href="javascript:void(0)" id='link_umap' class='method_link'>Semantic Maps</a></li>
+
+  <li><a href="javascript:void(0)" id='link_ranks' class='method_link'>Changing Associations</a></li>
+  <li><a href="javascript:void(0)" id='link_spaces' class='method_link'>Key Spaces</a></li>
+  <li><a href="javascript:void(0)" id='link_custom' class='method_link'>Semantic Dimensions</a></li>
+
+  <!-- <hr/> -->
+  <br/>
+
+
+  <div id='sidebar_content'>
+    <div id="command_bar">
+      {%block cmdbar%}{%endblock%}
+    </div>
+    <div id='status'></div>
+  </div>
+
+  <!-- <br/> -->
+
+  <h3>In model</h3>
+    <select id="model_id">
+      <option value="COHA_byhalfcentury_nonf_smpl" selected>COHA (Am. C19-C20 non-fiction, per 50 yr)</option>
+      <!-- <option value="COHA_byhalfcentury_nonf">COHA (Am. C19-C20 non-fiction, per 50 yr)</option> -->
+      <!-- <option value="COHA_bythirtyyear_nonf">COHA (Am. C19-C20 non-fiction, per 30 yr)</option> -->
+    </select>
+
+
+    <div id="periods">
+      <!-- <br/><input type="checkbox" class="period_input" id="period_combined" name="period_combined" value="combined" /> All (combined) -->
+      <a href="javascript:void(0)" id="link_check_all_periods">(Check all)</a>
+    </div>
+
+
+    Shown as:
+    <div id="period_controls">
+        <!-- <a href="javascript:void(0)" id="link_average_periods">averaging</a> -->
+        <!-- <a href="javascript:void(0)" id="link_diachronic_periods">diachronic</a> -->
+        <input type="radio" name="combined_periods_by" value="diachronic" checked>Diachronic</input>
+        <br/><input type="radio" name="combined_periods_by" value="average">Averaged</input>
+        <br/><input type="radio" name="combined_periods_by" value="simultaneous">Simultaneous</input>
+
+
+    </div>
+    
+    
+    <!-- <center> -->
+      <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
+    <!-- </center> -->
+    
+    <input type="hidden" id="subpage" value=""></input>
+
+</div>
+
+
+
+
+<div id='display'>
+  <!-- <center> -->
+    <div id='titles'>
+      <div id='fig_title'></div>
+      <div id='fig_subtitle'></div>
+      <div id='caption'></div>
+    </div>
+    <!-- <center> -->
+      <div id='progressbar'></div>
+    <!-- </center> -->
+    <div id="loading_msg"></div>
+  <!-- </center> -->
+{%block content %}{%endblock %}
+
+
+
+<div id='footer'>
+</div>
+
+
+
+{%block footer %}{%endblock%}
+</div>
+
+
+  
+
+ <script>
+
+  var autoExpand = function (field) {
+
+  // Reset field height
+  field.style.height = 'inherit';
+
+  // Get the computed styles for the element
+  var computed = window.getComputedStyle(field);
+
+  // Calculate the height
+  var height = parseInt(computed.getPropertyValue('border-top-width'), 10)
+               + parseInt(computed.getPropertyValue('padding-top'), 10)
+               + field.scrollHeight
+               + parseInt(computed.getPropertyValue('padding-bottom'), 10)
+               + parseInt(computed.getPropertyValue('border-bottom-width'), 10);
+
+  field.style.height = height + 'px';
+
+};
+
+
+  document.addEventListener('input', function (event) {
+  if (event.target.tagName.toLowerCase() !== 'textarea') return;
+  autoExpand(event.target);
+}, false);
+
+  // $(function() { $('#analyze_word').click(); });
+
+
+
+
+
+
+</script>
+
+  </body>
+
+</html>
+

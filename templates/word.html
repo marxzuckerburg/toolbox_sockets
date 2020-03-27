@@ -1,0 +1,578 @@
+{% extends "base2.html" %}
+
+
+
+
+{%block cmdbar %}
+
+<div id="cmdbar_net" style="display:none">
+
+	<h3>Network of similar words</h3>
+	<li>Link to closest N neighbors: <input type='textbox' id='n_top' value="10" style="width:2em;"></input></li>
+	<!-- <input id="periods" multiple> -->
+		<!-- <option value="combined">(combined)</option> -->
+		<!-- added by jquery to follow: -->
+	<!-- <li id="periods">
+		Periods:
+			<br/><input type="checkbox" class="period_input" id="period_combined" name="period_combined" value="combined" /> All (combined)
+	</li> -->
+
+<br/>
+</div>
+
+
+{%endblock%}
+
+
+{% block content %}
+
+
+<!-- PLACEHOLDERS FOR JQUERY TARGETS -->
+<!-- <center> -->
+	<div id="corpus_desc"></div>
+	<div id="networks">
+		<!-- <canvas id="net_canvas" /> -->
+	</div>
+	<div id="umap"></div>
+	<div id="cy"></div>
+	<div id="net_view"><div id="net_container"><div id="net_chart"></div></div></div>
+<!-- </center> -->
+
+
+<script>
+
+	const W2V_MODELS = {{W2V_MODELS | dump | safe}};
+
+
+function get_model_dat() {
+	return W2V_MODELS[get_model_id()]
+}
+
+function get_model_periods() {
+	return W2V_MODELS[get_model_id()]['periods'] 
+}
+
+function get_model_fn() {
+	return W2V_MODELS[get_model_id()]['fn'] 
+}
+
+function get_model_id() {
+	return $('#model_id').val()
+}
+
+
+function clear_viz() {
+	$("#data_view").html("");
+	$('#linegraph_spaces').html("");
+	$('#linegraph').html("");
+	$('#slopegraph').html("");
+	$('#spaces_custom_viz').html("");
+	$('#umap').html("")
+	$('#net_canvas').remove()
+	$('#networks').html("")
+}
+
+
+
+function refresh_analyze_word() {
+	//$('#analyze_word_div').html('<input id="analyze_word" type="text" id="input-tags" class="input-tags demo-default" value="">')
+}
+
+
+function status(data,max_lines=10) {
+	// lines = $('#status').html().split('<br/>')
+	// kept_lines = lines.slice(lines.length-9)
+	// kept_lines.push(data)
+	// new_str = kept_lines.join('<br/>')
+	setTimeout(function() {
+	//$('#status').prepend(data+'<br/>'); //+$('#status').html());
+	$('#loading_msg').append('>> '+data+'<br/>'); //+$('#status').html());
+	}, 100)
+	// $('#status').html(new_str)
+}
+function log(x) {
+	//status('<< '+x);
+	status('(browser) '+x)
+}
+
+function split_words(_words) {
+	_words=_words.split('\n').join(',')
+	try {
+		_words_l0 = _words.split(',')
+	} catch(TypeError) {
+		return [];
+	}
+	_words_l = []
+	for(wii=0; wii<_words_l0.length; wii++) {
+		wx = _words_l0[wii].trim()
+		if(wx!=undefined & wx!='') {
+			_words_l.push(wx);
+		}
+	}
+	return _words_l;
+}
+
+
+
+function init_selectize() {
+	$('#analyze_word').selectize({
+	  plugins: ['remove_button'],
+	  persist: false,
+	  create: true,
+	  render: {
+	    item: function(data, escape) {
+	      return '<div>' + escape(data.text) + '</div>';
+	    }
+	  },
+	  onChange: function () {
+	        analyze_word();
+	  },
+	 
+	});
+	// var selectize = $('#analyze_word')[0].selectize
+	// options.forEach(function(opt_d) { selectize.addOption(opt_d) })
+	// selectize.refreshOptions()
+	// selectize.close()
+}
+
+
+
+
+function reset_periods() {
+	// init page$
+	mdat = get_model_dat()
+	init_periods = get_model_periods()
+	subpage=get_subpage()
+	var max_period
+	if(subpage == 'umap' | subpage == 'spaces' | subpage == 'custom') {
+		max_period=1000
+	} else if(init_periods.length>4) { 
+		max_period=3 
+	} else { 
+		max_period=2 
+	}
+
+	$('#periods').html('Periods: ')
+	init_periods.forEach(function(period,i) {
+		period_nice = mdat['periods_nice'][i]
+		// $('#periods').append('<option value="'+period+'">'+period+'</option>')
+		var is_checked='checked'
+		// var is_checked=''
+		// if(i<max_period) { is_checked='checked'}
+		$('#periods').append('<li class="li_period"><input type="checkbox" class="period_input" name="period_'+period+'" value="'+period+'" '+is_checked+' /> '+period_nice+'')
+	});
+}
+
+function get_subpage() {
+	return $('#subpage').val()		
+}
+
+// progressbar.js@1.0.0 version is used
+// Docs: http://progressbarjs.readthedocs.org/en/1.0.0/
+
+function make_progress_bar(container) {
+
+// var bar = new ProgressBar.Circle(container, {
+//     color: '#aaa',
+//     // This has to be the same size as the maximum width to
+//     // prevent clipping
+//     strokeWidth: 4,
+//     trailWidth: 1,
+//     easing: 'easeInOut',
+//     duration: 1400,
+//     text: {
+//       autoStyleContainer: false
+//     },
+//     from: { color: '#aaa', width: 1 },
+//     to: { color: '#333', width: 4 },
+//     // Set default step function for all animate calls
+//     step: function(state, circle) {
+//       circle.path.setAttribute('stroke', state.color);
+//       circle.path.setAttribute('stroke-width', state.width);
+
+//       var value = Math.round(circle.value() * 100);
+//       if (value === 0) {
+//         circle.setText('');
+//       } else {
+//         circle.setText(value);
+//       }
+
+//     }
+//   });
+
+var bar = new ProgressBar.Line(container, {
+  strokeWidth: 4,
+  easing: 'easeInOut',
+  duration: 1400,
+  // color: '#FFEA82',
+  // trailColor: '#eee',
+
+  color:'gray',
+  trailWidth: 1,
+  svgStyle: {width: '100%', height: '100%'},
+  text: {
+    style: {
+      // Text color.
+      // Default: same as stroke color (options.color)
+      // color: '#999',
+      position: 'absolute',
+      right: '0',
+      top: '30px',
+      padding: 0,
+      margin: 0,
+      transform: null
+    },
+    autoStyleContainer: false
+  },
+  from: {color: '#FFEA82'},
+  to: {color: '#ED6A5A'},
+  step: (state, bar) => {
+    bar.setText(Math.round(bar.value() * 100) + ' %');
+  }
+});
+
+  bar.text.style.fontFamily = '"Ubuntu Mono", monospace'; //'"Raleway", Helvetica, sans-serif';
+  // bar.text.style.fontSize = '2rem';
+  bar.text.style.color = 'gray';
+
+
+  return bar
+}
+
+function progress(n) {
+	// $( "#progressbar" ).progressbar({ value: n*100 });
+}
+
+function netswitch(div_id) { 
+
+	$('.net_div').hide()
+	$('#'+div_id).show();
+}
+
+
+
+$(function () {
+
+	
+
+	var socket = io();
+
+	// $( "#progressbar" ).progressbar( "enable" );
+	$('#progressbar').hide()
+	$( "#progressbar" ).progressbar({ value: 0.0,classes:{'ui-progressbar':'highlight' } });
+
+
+	// var bar = make_progress_bar('#progressbar')
+	// bar.animate(0.0)
+	//progress(0.0)
+
+		
+	
+
+	var log = function(x) { console.log(x); status('(browser) '+x) }
+
+	reset_periods()
+
+
+	function make_caption() {
+		opts=get_opts()
+		model_dat=get_model_dat()
+		html='Corpus: '+model_dat['corpus_desc']
+		html+='<br/>'
+		html+='Period'
+
+		// get nice period
+
+		if(opts['periods'].length>1) { html+='s'}
+		// html+=' shown here:'
+		html+=' (n='+opts['periods'].length+'): '
+		opts['periods'].forEach(function(p,_i) { 
+			//html+=' '+p 
+			pi = model_dat['periods'].indexOf(p)
+			pnice=model_dat['periods_nice'][pi]
+			if(_i>0) { html+=',' }
+			html+=' '+pnice 
+		})
+
+
+		//
+		html+='<br/>Words (n='+opts['words'].length+'): '+opts['words'].slice(0,50).join(', ')
+
+		$('#caption').html(html)
+	}
+
+
+	function make_footer() {
+		title=$('#fig_title').html()
+		footer=''
+		if(title) {
+			footer+='“'+title+'”. '
+		}
+
+		footer+='Cambridge Keydata Project, 2020, '
+		footer+='<a href="'+url+'" target="_blank">'+url+'</a>.'
+
+		var dateObj = new Date();
+		// var month = dateObj.getUTCMonth() + 1; //months from 1-12
+		var day = dateObj.getUTCDate();
+		var year = dateObj.getUTCFullYear();
+		var monthNames = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
+		var month = monthNames[dateObj.getUTCMonth()]
+
+		newdate = day+' '+ month + ' ' + year
+
+		footer+=' Accessed '+newdate+'.'
+
+		$('#footer').html(footer)
+		return footer
+	}
+
+
+	function get_opts() {
+		mdat=get_model_dat()
+		opts={}
+		opts['words']=split_words($('#analyze_word').val())
+		opts['n_top']=$('#n_top').val();
+		opts['expand_n']=$('#expand_n').val();
+		opts['model_id']=get_model_id()
+		opts['combine_periods']=$('input[name="combined_periods_by"]:checked').val()
+		for(var mk in mdat) {
+			opts['model_'+mk]=mdat[mk]
+		}
+		// opts['periods']=$(".period_input").val()
+		opts['periods']=[]
+		$('.period_input:input:checked').map(function(){opts['periods'].push($(this).val()) })
+
+		opts['subpage']=get_subpage()
+		// console.log('!opts!',opts)
+		return opts
+	}
+
+
+	function get_self_url(opts=undefined) {
+		if(opts==undefined) { opts=get_opts() }
+
+		url_server='http://'+window.location.href.split('/')[2].replace(/\/+$/, "")
+
+		url = url_server
+		url+='?word=' + opts['words'].join(',')
+		url+='&view=' + opts['subpage']
+		url+='&periods=' + opts['periods'].join(',')
+		url+='&model_id=' + opts['model_id']
+		url+='&n_top='+opts['n_top']
+
+		return url
+	}
+	
+	function analyze_word(subpage='simnet') {
+		var opts=get_opts()
+		var url=get_self_url(opts)
+		console.log('URL??',url)
+		window.history.pushState({state: "dummyState"}, "Title", url);
+		
+		make_caption()
+		
+
+		// $( "#progressbar" ).progressbar({ value: 0.0 });
+		$( "#progressbar" ).progressbar({ value: false });
+
+
+
+
+		var view = subpage;
+		clear_viz();
+		$.magnificPopup.close();
+		$('#status').html('')
+		$('#loading_msg').html('')
+		$('#loading_msg').show()
+		// $('#status').show()
+
+		$('#subpage').val(subpage)
+
+		_words = []
+		maxw=3
+		if(opts['words'].length > maxw) {
+			_words = opts['words'].slice(0,3)
+			// _words.push('...')
+			_words.push('et al')
+			// _words[2] = _words[2]+'...'
+		} else {
+			_words = opts['words']
+		}
+		// _wordstr='“'+_words.join(',” “')+'”'
+		// _wordstr=_wordstr.replace('“et al”','et al')
+		_wordstr='‘'+_words.join('’, ‘')+'’'
+		_wordstr=_wordstr.replace('‘et al’','et al')
+		
+
+		console.log('>> analyze_word',opts,subpage)
+		// bar.animate(0.25)
+		opts['progress_range']=[0.0,1.0]
+		
+		if (view==undefined) { var view=get_cmd(); }
+
+		all_periods = use_all_periods()
+		//console.log('view',view)
+		// console.log('all_periods',all_periods)
+
+		$('.method_link').removeClass('method_link_enabled')
+		$('.method_link').attr('class','method_link_disabled method_link')
+		
+		if (view == "ranks") {
+			$('#link_ranks').removeClass('method_link_disabled')
+			$('#link_ranks').attr('class','method_link_enabled method_link')
+			get_ranks(word,popup=false);
+
+		
+		} else if (view == "custom") {
+			$('#link_custom').removeClass('method_link_disabled')
+			$('#link_custom').attr('class','method_link_enabled method_link')
+			custom_spaces(word,all_periods=all_periods);
+
+		
+		} else if (view == "simnet") {
+			$('#progressbar').show()
+			status('loading semantic network for words: '+opts['words'].join(', '))
+
+			$('#link_simnet').removeClass('method_link_disabled')
+			$('#link_simnet').attr('class','method_link_enabled method_link')
+			console.log("OPTS>>",opts)
+			title = 'Semantic Compound of '+_wordstr
+			subtitle = 'Network connecting each word to its '+opts['n_top']+' nearest words in the model'
+			
+			$('#fig_title').html(title)
+			$('#fig_subtitle').html(subtitle)
+			make_caption()
+			make_footer()
+
+
+
+			// opts['progress_range']=[0.25,0.9]
+			// progress(0.33)
+			// opts['progress_range']=[0,1.0]
+			socket.emit('mostsimnet', opts)
+
+		} else if (view=='expand') {
+			// log('expanding words...',opts)
+			socket.emit('expandwords',get_opts())
+
+		} else if (view=='umap') {
+			$('#link_umap').removeClass('method_link_disabled')
+			$('#link_umap').attr('class','method_link_enabled method_link')
+
+			title = 'Semantic Map of '+_wordstr
+			subtitle = 'UMAP dimensionality reduction on their vector positions'
+			$('#fig_title').html(title)
+			$('#fig_subtitle').html(subtitle)
+			make_caption()
+
+			status('Progress...')
+			log('umapping words...')
+
+			socket.emit('get_umap',opts)
+		
+		} else {
+			// spaces
+			$('#link_spaces').removeClass('method_link_disabled')
+			$('#link_spaces').attr('class','method_link_enabled method_link')
+			get_spaces(word,all_periods=all_periods)
+		}
+
+		//bar.animate(0.25)
+
+		// cache_vars();
+	
+
+
+	}
+	
+	// SOCKET ROUTING
+	socket.on('status', function(data){  status(data); });
+
+	
+	// DRAW MOST SIMILAR
+	socket.on('mostsimnet_resp', function(response_data){
+		// bar.animate(0.75)
+		log('received similarity network data')
+		log('drawing similarity network data')
+    	
+    	draw_nets(response_data.data)
+    	
+    	$('#loading_msg').hide(); //$('#status').show()
+    	// $('#progressbar').progressbar('option', 'value', 0);
+    	// $('#fig_title').html(response_data.title)
+    	log('completed drawing similarity network')
+
+    	// bar.animate(1.0)
+    	$('#progressbar').hide()
+    	progress(1.0)
+	});
+
+	socket.on('progress',function(progress_float) {
+		console.log('PROGRESS!',progress_float)
+		// bar.animate(progress_float)
+		progress(progress_float)
+		// setTimeout(function() { bar.animate(progress_float) }, Math.random() * 1000 + 250)
+	})
+
+	
+	//  EXPAND WORDSET
+	socket.on('expandwords_resp', function(new_words){
+		log('received expanded wordset')
+		console.log('new_words',new_words)
+		
+		current_val = get_word().split(',').join('\n')
+		new_val=current_val+'\n'+new_words.join('\n')
+		//refresh_analyze_word()
+    	$('#analyze_word').val(new_val)
+		//init_selectize()
+	});
+
+
+	// SHOW MOST SIMILAR
+	socket.on('mostsim_resp', function(data){
+		log('received similarity data')
+		
+		html=''
+    	for (var word in data) {
+    		html+='<li>'+word+':'+data[word].slice(0,5).join(' ')+'...'
+    	}
+    	$('#feedback').html(html)
+	});
+
+
+	// UMAP
+	socket.on('get_umap_resp', function(data){
+		//console.log('got this reply!',data);
+		log('received response to get_umap()')
+		$('#loading_msg').hide()
+    	plot_dynamic(data,
+		  word_col='word',
+		  y_col = "umap_V2",
+		  x_col = "umap_V1",
+		  t_col = "period",
+		  div_id="umap")
+	});
+
+	// FINALLY: ANALYZE WORD WITH CURRENT OPTIONS
+	analyze_word(subpage='simnet')
+
+	// FINAL JQUERY BEFORE LOADING
+	// $('#analyze_word').val("{{DEFAULT_WORD_STR}}")
+	//init_selectize()
+	$('#link_expand').click(function() { analyze_word(subpage='expand') })
+	$('#link_umap').click(function() { analyze_word(subpage='umap') })
+	$('#link_simnet').click(function() { analyze_word(subpage='simnet') })
+	$('#link_spaces').click(function() { analyze_word(subpage='spaces') })
+	$('#link_custom').click(function() { analyze_word(subpage='custom') })
+	$('#link_ranks').click(function() { analyze_word(subpage='ranks') })
+	$('#model_id').change(function(){ reset_periods(); analyze_word();  });
+	$('#analyze_word_button').click(function() { analyze_word();});
+	$('#n_top').bind("enterKey",function(e){ analyze_word(); });
+	$('#n_top').keyup(function(e){ if(e.keyCode == 13) { $(this).trigger("enterKey");}});
+	// $('.period_input').change(function(){ analyze_word();});
+});
+
+</script>
+
+{% endblock %}
