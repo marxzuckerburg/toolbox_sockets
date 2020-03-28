@@ -31,7 +31,7 @@ W2V_MODELS = {
 	},
 
 	'COHA_byhalfcentury_nonf_smpl': {
-		"fn": "/Users/ryan/DH/keydata/data/db/models/COHA_byhalfcentury_nonf/chained_combined/1800-1999.min=500.run=01.txt",
+		"fn": "models/COHA_byhalfcentury_nonf_smpl/model.txt",
 		'periods':['1800','1850','1900','1950'],
 		'periods_nice':['1800-1850','1850-1900','1900-1950','1950-2000'],
 		"corpus_desc":"COHA (Corpus of Historical American English), Non-Fiction [Samples]"
@@ -60,9 +60,13 @@ DEFAULT_N_TOP = 50
 DB_NAME = 'keydata_toolbox'
 DB_URL = 'mongodb://localhost:27017'
 DB_NAMESPACE_VECS = 'vecs'
-DB_NAMESPACE_DISTS = 'dists'
+DB_NAMESPACE_DISTS = 'distnet'
+DB_DIR = 'models/'
 
 
 
-
+#MAX_NUM_VECS_TO_STORE = 100 
 MAX_NUM_VECS_TO_STORE = 50000
+
+
+

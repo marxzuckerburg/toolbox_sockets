@@ -8,7 +8,17 @@
 <div id="cmdbar_net" style="">
 
 	<h3>Network of similar words</h3>
-	<li>Link to closest N neighbors: <input type='textbox' id='n_top' value="5" style="width:2em;"></input></li>
+	<li>Link to closest N neighbors:
+		<select id='n_top'>
+			<option value='3'>3</option>
+			<option value='5' selected>5</option>
+			<option value='10'>10</option>
+			<option value='25'>25</option>
+			<option value=''>50</option>
+		</select>
+	</li>
+
+		<!-- <input type='textbox' id='n_top' value="5" style="width:2em;"></input></li> -->
 	<!-- <input id="periods" multiple> -->
 		<!-- <option value="combined">(combined)</option> -->
 		<!-- added by jquery to follow: -->
@@ -568,10 +578,12 @@ $(function () {
 	$('#link_ranks').click(function() { analyze_word(subpage='ranks') })
 	$('#model_id').change(function(){ reset_periods(); analyze_word();  });
 	$('#analyze_word_button').click(function() { analyze_word();});
-	$('#n_top').bind("enterKey",function(e){ analyze_word(); });
-	$('#n_top').keyup(function(e){ if(e.keyCode == 13) { $(this).trigger("enterKey");}});
+	$('#n_top').change(function(){ reset_periods(); analyze_word();  });
+	// $('#n_top').bind("enterKey",function(e){ analyze_word(); });
+	// $('#n_top').keyup(function(e){ if(e.keyCode == 13) { $(this).trigger("enterKey");}});
 	// $('.period_input').change(function(){ analyze_word();});
 	$('.combine_periods_opt').change(function(){ analyze_word(); });
+
 });
 
 </script>

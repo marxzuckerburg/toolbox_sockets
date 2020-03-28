@@ -4,6 +4,8 @@ import pandas as pd
 import db as DB
 from tqdm import tqdm
 from app_config import *
+from tinydb import Query
+from graph_tool.all import *
 
 #  global variables for storage
 fn2M = {}
@@ -31,22 +33,22 @@ class Embedding(object):
 		import gensim
 		if not hasattr(self,'_gensim'):
 			now=time.time()
-			self.log('generating model from vectors stored in db: '+self.fn)
-			self._gensim = gensim.models.KeyedVectors(vector_size=300)
-			all_words,all_vecs = self.get_all_word_vecs()
-			self._gensim.add(all_words,all_vecs)
-
-			# self.log('generating model from vectors stored on disk: '+self.fn)
-			# all_words=[]
-			# all_vecs=[]
-			# with open(self.fn) as f:
-			# 	for i,ln in enumerate(f):
-			# 		if not i: continue
-			# 		lndat=ln.strip().split()
-			# 		all_words.append(lndat[0])
-			# 		all_vecs.append([float(x) for x in lndat[1:]])
+			#self.log('generating model from vectors stored in db: '+self.fn)
 			# self._gensim = gensim.models.KeyedVectors(vector_size=300)
+			# all_words,all_vecs = self.get_all_word_vecs()
 			# self._gensim.add(all_words,all_vecs)
+
+			self.log('generating model from vectors stored on disk: '+self.fn)
+			all_words=[]
+			all_vecs=[]
+			with open(self.fn) as f:
+				for i,ln in enumerate(f):
+					if not i: continue
+					lndat=ln.strip().split()
+					all_words.append(lndat[0])
+					all_vecs.append([float(x) for x in lndat[1:]])
+			self._gensim = gensim.models.KeyedVectors(vector_size=300)
+			self._gensim.add(all_words,all_vecs)
 
 			# self._gensim=gensim.models.KeyedVectors.load_word2vec_format(self.fn)
 			
@@ -68,8 +70,9 @@ class Embedding(object):
 
 	@property
 	def distnet_fn(self):
-		if hasattr(self,'fn_distnet'): return self.fn_distnet
-		return os.path.splitext(self.fn)[0]+'.distnet.txt'
+		#if hasattr(self,'fn_distnet'): return self.fn_distnet
+		#return os.path.splitext(self.fn)[0]+'.distnet.txt'
+		return os.path.join(DB_DIR,self.id,'distnet.gt')
 
 
 	@property
@@ -78,30 +81,35 @@ class Embedding(object):
 		return self._distnet
 
 	def get_distnet(self,n_top=None):
-		self.log('building network...')
-		import networkx as nx
-		G=nx.DiGraph()
-		for d in tqdm(self.distdb.find(),total=MAX_NUM_VECS_TO_STORE):
-			if n_top and d['sim_rank']>n_top: continue
-			G.add_edge(d['source'],d['target'],weight=d['weight'],sim_rank=d['sim_rank'])
+		from networks import GraphToolDB
+		G=GraphToolDB(fn=self.distnet_fn,log=self.log)
+		G.load()
 		return G
+
+		#self.log('building network...')
+		# import networkx as nx
+		# G=nx.DiGraph()
+		# #for d in tqdm(self.distdb.find(),total=MAX_NUM_VECS_TO_STORE):
+		# for d in self.distdb.all():
+		# 	if n_top and d['sim_rank']>n_top: continue
+		# 	G.add_edge(d['source'],d['target'],weight=d['weight'],sim_rank=d['sim_rank'])
+		# return G
+		#return self.distdb
 
 	## DATA GENERATION
 
-	def build_vecdb(self,max_num_vecs=None):
-		with open(self.fn) as f:
-			for i,ln in enumerate(tqdm(f,total=None)):
-				if i==0: continue
-				# if i>max_num_vecs: break
-				lndat=ln.split()
-				word=lndat[0]
-				wordvecs=[float(x) for x in lndat[1:]]
-				self.db.insert({'word':word,'vecs':wordvecs})
+	# def build_vecdb(self,max_num_vecs=None):
+	# 	with open(self.fn) as f:
+	# 		for i,ln in enumerate(tqdm(f,total=None)):
+	# 			if i==0: continue
+	# 			# if i>max_num_vecs: break
+	# 			lndat=ln.split()
+	# 			word=lndat[0]
+	# 			wordvecs=[float(x) for x in lndat[1:]]
+	# 			self.db.insert({'word':word,'vecs':wordvecs})
 
 	
-
-
-	def build_distdb(self,n_top=DEFAULT_N_TOP,n_vecs=MAX_NUM_VECS_TO_STORE):
+	def build_distmatrix(self,n_top=DEFAULT_N_TOP,n_vecs=MAX_NUM_VECS_TO_STORE):
 		self.log('BUILDING DISTANCE DATABASE')
 		
 		all_words,all_vecs=self.get_all_word_vecs()
@@ -123,25 +131,60 @@ class Embedding(object):
 		dfdist=pd.DataFrame(arr,index=vocab,columns=vocab)
 		tdist=round(time.time()-now,1)
 		print('done computing pandas in %ss' % tdist)
+		# print(dfdist)
 
-		# insert?
-		now=time.time()
-		batch=[]
-		for word in tqdm(vocab):
-			row = dfdist.loc[word].sort_values().iloc[1:n_top+1]
-			sim_rank=0
-			for word2,result in zip(row.index,row):
-				sim_rank+=1
-				odx={'source':word,'target':word2,'weight':1-result,'sim_rank':sim_rank}
-				batch+=[odx]
-				if len(batch)>1000:
-					self.distdb.insert_many(batch)
-					#break
-					batch=[]
-			#break
-		if len(batch)>0: self.distdb.insert_many(batch)
-		tdist=round(time.time()-now,1)
-		print('done building and inserting results in %ss' % tdist)
+		# save?
+		#ofn=os.path.join(DB_DIR,self.id,'distmatrix.csv')
+		#dfdist.to_csv(ofn)
+		# ofn=os.path.join(DB_DIR,self.id,'distdf.pickle')
+		# dfdist.to_pickle(ofn)
+		return dfdist
+
+
+	def build_distdb(self,n_top=DEFAULT_N_TOP,n_vecs=MAX_NUM_VECS_TO_STORE,n_tops=[3,5,10,25,None]):
+		dfdist=self.build_distmatrix(n_top=n_top,n_vecs=n_vecs)
+		vocab=list(dfdist.index)
+
+		for n_top in n_tops:
+			self.log('>> gen distnet for n_top='+str(n_top))
+
+			# insert?
+			now=time.time()
+
+			## NETDB
+			g=Graph()
+			# add props
+			#vprop_d = g.new_vertex_property('object')
+			#eprop_d = g.new_edge_property('object')
+			vprop_id = g.vertex_properties['id'] = g.new_vertex_property('string')
+			eprop_weight = g.edge_properties['weight'] = g.new_edge_property('float')
+			eprop_cdist = g.edge_properties['cdist'] = g.new_edge_property('float')
+			eprop_sim_rank = g.edge_properties['sim_rank'] = g.new_edge_property('float')
+			# add nodes
+			word2node={}
+			for w in vocab:
+				node = g.add_vertex()
+				vprop_id[node] = w
+				word2node[w]=node
+			# add edges
+			for word in tqdm(vocab):
+				row = dfdist.loc[word].sort_values().iloc[1:n_top+1]
+				sim_rank=0
+				for word2,result in zip(row.index,row):
+					sim_rank+=1
+					edge = g.add_edge(word2node[word],word2node[word2])
+					#eprop_d[edge] = {'weight':1-result,'sim_rank':sim_rank}
+					eprop_cdist[edge]=result
+					eprop_weight[edge] = 1-result
+					eprop_sim_rank[edge] = sim_rank
+
+			# save net
+			dbfn=os.path.join(DB_DIR,self.id,DB_NAMESPACE_DISTS) + (f'.n_top={n_top}.gt' if db_fn else '.gt')
+			g.save(dbfn,fmt='gt')
+			print('>> saved: '+dbfn)
+
+			tdist=round(time.time()-now,1)
+			self.log('done building and inserting results in %ss' % tdist)
 
 
 
@@ -152,20 +195,40 @@ class Embedding(object):
 
 	def get_vector_from_db(self,vecname):
 		# print('Q:',vecname)
-		res=self.db.find_one({'word':vecname})
-		if res==None: return res
-		return np.array(res['vecs'])
+		#res=self.db.find_one({'word':vecname})
+		#res=self.db.find_one({'word':vecname})
+		
+		# Tiny DB
+		# Q=Query()
+		# res=self.db.search(Q.word==vecname)
+		# if not res: return None
+		# res=res[0]
+		# return np.array(res['vecs'])
+
+		# just use gensim
+		if vecname in self.gensim.vocab: return self.gensim[vecname]
+		return None
 
 	def get_all_word_vecs(self):
 		all_words=[]
 		all_vecs=[]
+		
+		# mongo
 		#for d in tqdm(self.db.find().batch_size(1000),total=self.db.count()):
-		for d in self.db.find().batch_size(100):
-			try:
-				all_words.append(d['word'])
-				all_vecs.append(d['vecs'])
-			except:
-				pass
+		#for d in self.db.find().batch_size(100):
+		
+		# tinydb
+		# for d in self.db.all():
+		# 	try:
+		# 		all_words.append(d['word'])
+		# 		all_vecs.append(d['vecs'])
+		# 	except:
+		# 		pass
+
+		# just use gensim
+		all_words=list(self.gensim.vocab)
+		all_vecs=self.gensim.vectors
+
 		return(all_words,all_vecs)
 
 
@@ -226,53 +289,51 @@ class Embedding(object):
 
 	
 
+	## DIST NET QUICK CALCS
+	def expand_words_with_paths(self,words,sep='>',n_top=DEFAULT_N_TOP):
+		print('expanding words from:',words)
+		new_words=[]
+		path_edges=[]
+		gq=None
+		for word_or_formula in words:
+			if not sep in word_or_formula:
+				new_words+=[word_or_formula]
+			else:
+				self.log('expanding words for formula: '+word_or_formula)
+				w1,w2 = word_or_formula.split(sep,1)
+				w1,w2=w1.strip(),w2.strip()
+				self.log(f'finding shortest path from {w1} to {w2}')
+
+				if not gq:
+					if n_top:
+						gq=self.distnet.filter_rank(n_top)
+					else:
+						gq=self.distnet
+				
+				path=self.distnet.shortest_path(w1,w2,g=gq)
+				if path:
+					new_words+=path
+					for i,b in enumerate(new_words[1:]):
+						a=new_words[i]
+						path_edges+=[(a,b)]
+				else:
+					new_words+=[w1,w2]
+
+		print('expanded words to:',new_words)
+		return (new_words,path_edges)
+
 
 
 
 
 	## GETTING SIMILARITY CALCULATIONS
 
-	def get_most_similar_from_distdb(self,word,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
-		# return [  (d['target'],d['weight']) for d in self.distdb.find({'source':word}) ]
-		new_name_sims=[]
-
-
-		print('get_most_similar_from_distdb('+word+')')
-
-		for edge_d in self.distdb.find({'source':word}):
-			#if edge_d['sim_rank']>n_top: continue
-			# print(edge_d)
-
-			new_sim_d={}
-			new_sim_d['id']=id1=edge_d['source']
-			new_sim_d['id2']=id2=edge_d['target']
-			worddat1=deperiodize_str(id1)
-			worddat2=deperiodize_str(id2)
-			new_sim_d['word'] = wordname1 = worddat1[0]
-			new_sim_d['word2'] =wordname2 = worddat2[0]
-			new_sim_d['period'] = period1 = worddat1[1]
-			new_sim_d['period2'] = period2 = worddat2[1]
-			new_sim_d['csim']=edge_d['weight']
-			new_sim_d['csim_rank']=edge_d['sim_rank']
-			# combine across periods?
-			new_name_sims.append(new_sim_d)
-
-		##  name_sims average?
-		if combine_periods=='average' and new_name_sims:
-			self.log('averaging results by period (`combine_periods` set to "average")')
-			new_name_sims=average_periods(new_name_sims,val_key='csim',word_key='word2',period_key='period2')
-		
-		#print('final ld:')
-		final_ld=new_name_sims[:n_top]
-		#print(pd.DataFrame(final_ld))
-		return final_ld
-
-
-
 	def get_most_similar(self,words,n_top=DEFAULT_N_TOP,periods=None,combine_periods=DEFAULT_COMBINED_PERIODS):
 		if periods is None: periods=self.periods
 		if combine_periods in {'simultaneous','diachronic'}:
 			words=periodize(words, periods)
+
+		(words,path_edges)=self.expand_words_with_paths(words,n_top=n_top)
 
 		most_similar_data = []
 		words_with_cached_dists = []
@@ -293,9 +354,52 @@ class Embedding(object):
 		msd2=self.get_most_similar_by_vector(words_with_uncached_dists,n_top=n_top,combine_periods=combine_periods)
 		most_similar_data.extend(msd2)
 
-
+		## annotate for paths
+		path_edge_set = set(path_edges)
+		for d in most_similar_data:
+			w1,w2=d['id'],d['id2']
+			d['was_path'] = ((w1,w2) in path_edge_set)
 
 		return most_similar_data
+
+
+
+
+
+	def get_most_similar_from_distdb(self,word,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
+		# return [  (d['target'],d['weight']) for d in self.distdb.find({'source':word}) ]
+		new_name_sims=[]
+
+
+		print('get_most_similar_from_distdb('+word+')')
+
+		for edge_d in self.distnet.most_similar_data(word,n_top=n_top):
+			#if edge_d['sim_rank']>n_top: continue
+			# print(edge_d)
+
+			new_sim_d={}
+			new_sim_d['id']=id1=word
+			new_sim_d['id2']=id2=edge_d['word']
+			worddat1=deperiodize_str(id1)
+			worddat2=deperiodize_str(id2)
+			new_sim_d['word'] = wordname1 = worddat1[0]
+			new_sim_d['word2'] =wordname2 = worddat2[0]
+			new_sim_d['period'] = period1 = worddat1[1]
+			new_sim_d['period2'] = period2 = worddat2[1]
+			new_sim_d['csim']=1-edge_d['cdist']
+			new_sim_d['csim_rank']=int(edge_d['sim_rank'])
+			# combine across periods?
+			new_name_sims.append(new_sim_d)
+
+		##  name_sims average?
+		if combine_periods=='average' and new_name_sims:
+			self.log('averaging results by period (`combine_periods` set to "average")')
+			new_name_sims=average_periods(new_name_sims,val_key='csim',word_key='word2',period_key='period2')
+		
+		#print('final ld:')
+		final_ld=new_name_sims[:n_top]
+		#print(pd.DataFrame(final_ld))
+		return final_ld
 
 
 	def get_most_similar_by_vector(self,words,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
@@ -317,14 +421,14 @@ class Embedding(object):
 
 			new_name_sims=[]
 			for xi,x in enumerate(name_sims[1:]):
-				print('x',x)
+				#print('x',x)
 				match=x[0]
 				csim=x[1]
 				new_sim_d={}
 				new_sim_d['id']=id1=name
 				new_sim_d['id2']=id2=match
 
-				print('!?!?',id1,id2)
+				# print('!?!?',id1,id2)
 
 				worddat1=deperiodize_str(id1)
 				worddat2=deperiodize_str(id2)
@@ -396,50 +500,9 @@ def split_words_only(_words):
 	return [w for w in split_words_keep_punct(_words) if w and w[0].isalpha()]
 	
 
-# function split_words(_words) {
-# 	print('split_words',_words)
-# 	_words=_words.replace('\r\n',',').replace('\r',',').replace('\n',',')
-# 	try {
-# 		_words_l0 = _words.split(',')
-# 	} catch(TypeError) {
-# 		return [];
-# 	}
-# 	_words_l = []
-# 	for(wii=0; wii<_words_l0.length; wii++) {
-# 		_words_l.push(_words_l0[wii].trim());
-# 	}
-# 	return _words_l;
-# }
-
 def split_words_keep_punct(_words):
 	import re
-	return re.findall(r"[\w']+|[.,!?;\-\+\/\*]", _words)
-
-# function isAlpha(str) {
-#   return /^[a-zA-Z]+$/.test(str);
-# }
-
-
-# function reformat_formula_str(_words) {
-# 	var _words=_words.replace(' ','')
-# 	return _words
-# }
-
-# function compute_arrays(x, y, operator) {
-# 	# print('computing array with operator',operator)
-# 	# print(x,operator,y)
-
-
-# 	if(operator=='+') { return math.add(x,y) }
-# 	if(operator=='-') { return math.subtract(x,y) }
-# 	if(operator=='*') { return math.multiply(x,y) }
-# 	if(operator=='/') { return math.divide(x,y) }
-# }
-
-# function vector_add(x, y) { return math.add(x,y) }
-# function vector_subtract(x, y) { return math.subtract(x,y) }
-# function vector_divide(x, y) { return math.divide(x,y) }
-# function vector_multiply(x, y) { return math.multiply(x,y) }
+	return re.findall(r"[\w']+|[.,!?;\-\+\/\*\>]", _words)
 
 
 def solve_vectors(formula, var2val={}):
@@ -449,43 +512,6 @@ def solve_vectors(formula, var2val={}):
 	parser = expression.Expression_Parser(variables=var2val)
 	return parser.parse(formula)
 
-
-# function compute_tree(tree,var2val={}) {
-# 	var arr_left=undefined;
-# 	var arr_right=undefined;
-# 	var op=undefined;
-# 	var new_val=undefined;
-# 	#  if branches
-# 	if (tree.left) { 
-# 		#  print('found split in tree:',tree.left,tree.operator,tree.right)
-# 		arr_left = compute_tree(tree.left,var2val)
-# 		op = tree.operator
-# 		arr_right = compute_tree(tree.right,var2val)
-# 		new_val = compute_arrays(arr_left,arr_right,op)
-# 		#  print('computation result ',arr_left[0],op,arr_right[0],'= ',new_val[0])
-# 		return new_val;
-# 	} else if (tree.value) {
-# 		#  print('found a value in tree',tree.value)
-# 		return tree.value;
-# 	} else {
-# 		#  print('found a variable in tree',tree.name)
-# 		new_val = var2val[tree.name]
-# 		#  print('found a new_val of',new_val) # .islice(0,5))
-# 		# print('new_val',new_val)
-# 		return new_val;
-# 	}
-# }
-
-# function dict_values(vector_data) {
-# 	var vecs = []
-# 	for(var name in vector_data) { 
-# 		vec = vector_data[name]
-# 		if(vec!=undefined) { 
-# 			vecs.push(vec)
-# 		}
-# 	}
-# 	return vecs
-# }
 
 
 
@@ -531,33 +557,20 @@ def solve_vectors(formula, var2val={}):
 
 
 
-# #  M = new Model(DEFAULT_W2V_FN)
-# #  M = gen_model(DEFAULT_W2V_FN)
-# #  print('Mfn',M.fn)
-
-# #  gen_model(DEFAULT_W2V_FN).then(function(M) {
-# #  	print('M??',M)
-# #  	print('Mfn2',M.fn)
-# #  	print("Mvoclength",M.num_words())
-# 	#  print('Mvec11',M.get_vectors(['word_1950', 'word_1950 + word_1900', 'value_1800']))
-# 	#  print('Mvec22',M.get_most_similar('value_1800,value_1800-value_1950'))
-# 	#  print('MM',M.M)
-# #  })
-
-# #  print('MVOC',M.vocab)
-
 
 def periodize(words,periods):
 	word_periods = []
 	# print('periodize',words,periods)
 
 	for w in words:
+		path_piece = '>' in w
 		if '_' in w and w.split('_')[1][0].isdigit(): 
 			word_periods.append(w)
 			continue  # if already period keep going
 		
 		word_pieces = split_words_keep_punct(w)
-		for p in periods:
+		for pi,p in enumerate(periods):
+			if path_piece and pi>0: break
 			# print(p,'...')
 			if len(word_pieces)==1:
 				word_period=w+'_'+p
@@ -701,9 +714,10 @@ def average_periods(word_ld,val_key='csim',word_key='word',period_key='period',p
 if __name__=='__main__':
 	pass
 
-	#e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
+	e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
 	#e.build_vecdb()
-	#e.build_distdb()
+	#e.build_distmatrix()
+	e.build_distdb()
 
 
 

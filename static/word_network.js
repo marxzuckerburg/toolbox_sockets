@@ -133,7 +133,9 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	  node1=id2node[link_d['source']];
 	  node2=id2node[link_d['target']];
 	  // edge_d={'stroke-width':10,'color':'red','opacity':0.25, 'size':10}
-	  graph.newEdge(node1, node2, {'weight':link_d['weight']*2});
+	  weight=link_d['weight']*2
+	  if(link_d['was_path']==true) { color='red' } else { color='black' }
+	  graph.newEdge(node1, node2, {'weight':weight, 'color':color });
 	});	
 	
 	// $('#net_canvas').springy({ graph: graph,

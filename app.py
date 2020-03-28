@@ -57,26 +57,28 @@ def get_model(opts):
 	
 @socketio.on('mostsimnet')
 def mostsimnet(opts):
-		msg='mostsimnet'
-		log('starting '+msg+'()')
-		print('mostsimnet_opts: ',opts)
-		
-		log('getting model')
-		model=get_model(opts)
+	msg='mostsimnet'
+	log('starting '+msg+'()')
+	print('mostsimnet_opts: ',opts)
+	
+	log('getting model')
+	model=get_model(opts)
 
-		log('getting sim data')
-		try:
-			n_top = int(opts['n_top'])
-		except ValueError:
-			n_top = DEFAULT_N_TOP
+	log('getting sim data')
+	try:
+		n_top = int(opts['n_top'])
+	except ValueError:
+		n_top = DEFAULT_N_TOP
 
-		most_similar_data = model.get_most_similar(words=opts['words'],n_top=n_top,periods=opts['periods'],combine_periods=opts['combine_periods'])
-		#print('most_similar_data',most_similar_data)
-		
-		log('making network')
-		networks_data = sims2net(most_similar_data,combine_periods=opts['combine_periods'])
+	most_similar_data = model.get_most_similar(words=opts['words'],n_top=n_top,periods=opts['periods'],combine_periods=opts['combine_periods'])
+	#print('most_similar_data',most_similar_data)
+	for d in most_similar_data:
+		print('final msd',d)
+	
+	log('making network')
+	networks_data = sims2net(most_similar_data,combine_periods=opts['combine_periods'])
 
-		emit(msg+'_resp', {'data':networks_data})
+	emit(msg+'_resp', {'data':networks_data})
 		
 
 
@@ -84,4 +86,4 @@ def mostsimnet(opts):
 
 if __name__ == '__main__':
 	# app.run(debug=True)
-	socketio.run(app, debug=True, port=6969,host='0.0.0.0')
+	socketio.run(app, debug=True, port=1799,host='0.0.0.0')
