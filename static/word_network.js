@@ -7,8 +7,14 @@
 var COLORS10 = ['#e07a43','#c38331','#a4892b','#858c33','#668d42','#488b54','#298766','#008275','#007b80','#137485']
 // var COLORS = ['#e07a43','#858c33','#298766','#137485']
 // var COLORS = ['#ecd44b','#fb7755','#bb3983','#17378d']
-var COLORS = ['#d15b18','#87971e','#0db48b','#27bfe0']
+// var COLORS = ['#d15b18','#87971e','#0db48b','#27bfe0']
+// var COLORS = ['#001021','#034748','#1481BA','#27BFE0', "#F2E2D2"]
 
+var COLORS = ['#681D23','#d15b18','#30A362','#27AADD']
+// COLORS.reverse()
+
+// for shortest path:
+COLORS.push('#FCC500')
 
 
 function draw_net(data) {
@@ -134,7 +140,7 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	  node2=id2node[link_d['target']];
 	  // edge_d={'stroke-width':10,'color':'red','opacity':0.25, 'size':10}
 	  weight=link_d['weight']*2
-	  if(link_d['was_path']==true) { color='red' } else { color='black' }
+	  if(link_d['was_path']==true) { color=COLORS[COLORS.length-1] } else { color='#443500' }
 	  graph.newEdge(node1, node2, {'weight':weight, 'color':color });
 	});	
 	
@@ -153,7 +159,40 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	      console.log('Node selected: ' + JSON.stringify(node.data));
 	    }
 	  });
-	});
+
+	  $('#'+div_id).prepend('<svg id="net_legend" height="200" width="100"></svg>')
+	  // select the svg area
+		var svg = d3v5.select("net_legend")
+
+		// Handmade legend
+		svg.append("circle").attr("cx",200).attr("cy",130).attr("r", 6).style("fill", "#69b3a2")
+		svg.append("circle").attr("cx",200).attr("cy",160).attr("r", 6).style("fill", "#404080")
+		svg.append("text").attr("x", 220).attr("y", 130).text("variable A").style("font-size", "15px").attr("alignment-baseline","middle")
+		svg.append("text").attr("x", 220).attr("y", 160).text("variable B").style("font-size", "15px").attr("alignment-baseline","middle")
+
+
+	 //  // add legend   
+		// var svg = d3v4.select('#net_legend').append('svg').attr('width',100).attr('height',100)
+
+		// var legend = svg.append("g")
+		// .attr("class", "net_legend_svg")
+		// .attr("x", w - 65)
+		// .attr("y", 25)
+		// .attr("height", 100)
+		// .attr("width", 100)
+
+		// legend.selectAll('g').data(opts['model_periods'])
+		// .enter()
+		// .append('g')
+		// .each(function(d, i) {
+		// 	var g = d3v4.select(this)
+		// 	g.append("rect")
+		// 	.attr("x", w - 65)
+		// 	.attr("y", i*25)
+		// 	.attr("width", 10)
+		// 	.attr("height", 10)
+		// })
+	})
 }
 
 

@@ -7,7 +7,7 @@
 
 <div id="cmdbar_net" style="">
 
-	<h3>Network of similar words</h3>
+	<h3>Network of similar* words</h3>
 	<li>Link to closest N neighbors:
 		<select id='n_top'>
 			<option value='3'>3</option>
@@ -300,13 +300,17 @@ $(function () {
 			//html+=' '+p 
 			pi = model_dat['periods'].indexOf(p)
 			pnice=model_dat['periods_nice'][pi]
+			color=COLORS[pi]
+			pnice_html = '<span style="color:'+color+'">'+pnice+'</span>'
 			if(_i>0) { html+=',' }
-			html+=' '+pnice 
+			html+=' '+pnice_html
 		})
 
 
 		//
-		html+='<br/>Words (n='+opts['words'].length+'): '+opts['words'].slice(0,50).join(', ')
+		wordstr=opts['words'].slice(0,50).join(', ')
+		wordstr=wordstr.replace('>','⟶')
+		html+='<br/>Words (n='+opts['words'].length+'): '+wordstr
 
 		$('#caption').html(html)
 	}
@@ -341,7 +345,7 @@ $(function () {
 	function get_opts() {
 		mdat=get_model_dat()
 		opts={}
-		opts['words']=split_words($('#analyze_word').val())
+		opts['words']=split_words($('#analyze_word').val().replace('⟶','>'))
 		opts['n_top']=$('#n_top').val();
 		opts['expand_n']=$('#expand_n').val();
 		opts['model_id']=get_model_id()
@@ -372,6 +376,17 @@ $(function () {
 		url+='&n_top='+opts['n_top']
 
 		return url
+	}
+
+	function period2nice(p,opts) {
+		pi = opts['model_periods'].indexOf(p)
+		pnice = opts['model_periods_nice'][pi]
+		return pnice
+	}
+
+	function period2color(p,opts,colors=COLORS) {
+		pi = opts['model_periods'].indexOf(p)
+		return colors[pi]
 	}
 	
 	function analyze_word(subpage='simnet') {
@@ -447,8 +462,40 @@ $(function () {
 			$('#link_simnet').removeClass('method_link_disabled')
 			$('#link_simnet').attr('class','method_link_enabled method_link')
 			console.log("OPTS>>",opts)
-			title = 'Semantic Compound of '+_wordstr
-			subtitle = 'Network connecting each word to its '+opts['n_top']+' nearest words in the model'
+
+
+			if (_wordstr.includes('>') & opts['words'].length==1) {
+				_onlyword=opts['words'][0]
+				id1=_onlyword.split('>')[0]
+				id2=_onlyword.split('>')[1]
+				w1=id1.split('_')[0]
+				w2=id2.split('_')[0]
+				p1=id1.split('_')[1]
+				p2=id2.split('_')[1]
+				p1nice=period2nice(p1,opts)
+				p2nice=period2nice(p2,opts)
+				c1=period2color(p1,opts)
+				c2=period2color(p2,opts)
+				cpath=COLORS[COLORS.length-1]
+				// w1color=`<span style="color:${c1}">${w1}</span>`
+				// w2color=`<span style="color:${c2}">${w2}</span>`
+				// p1color=`<span style="color:${c1}">${p1nice}</span>`
+				// p2color=`<span style="color:${c1}">${p2nice}</span>`
+
+				//title = 'Semantic Path of '+_wordstr.replace('>','’ ⟶ ‘') // from ${w1} to ${w2}`
+				// title=title.split('‘').join('<b>').split('’').join('</b>')
+				// title = `Semantic Path of ${w1color} to ${w2color}`
+				title = `Semantic Path: from <b>${w1}</b> to <b>${w2}</b>`
+
+				subtitle = `Network showing the <span style="color:${cpath}">shortest path</span> from <span style="color:${c1}"><b>${w1}</b> <small>(${p1nice})</small></span> to <span style="color:${c2}"><b>${w2}</b> <small>(${p2nice})</small></span>`
+				// subtitle = `Network showing the shortest path from ${w1color} (${p1color}) to ${w2color} (${p2color})`
+				//subtitle = `Network showing the shortest path from ${w1} (${p1nice}) to ${w2} (${p2nice})`
+				// each word to its '+opts['n_top']+' nearest words in the model'	
+			} else {
+				title = 'Semantic Compound of '+_wordstr
+				subtitle = 'Network connecting each word to its '+opts['n_top']+' nearest words in the model'	
+			}
+			
 			
 			$('#fig_title').html(title)
 			$('#fig_subtitle').html(subtitle)
