@@ -11,6 +11,8 @@ def get_db():
 
 
 def get_vecdb(model_id):
+	global M2VDB
+
 	if not model_id in M2VDB:
 		tbl_name=DB_NAMESPACE_VECS + '__' + model_id
 		# print('>> connecting to: '+tbl_name)
@@ -20,6 +22,8 @@ def get_vecdb(model_id):
 	return M2VDB[model_id]
 
 def get_distdb(model_id):
+	global M2DDB
+
 	if not model_id in M2DDB:
 		db=get_db()
 		#M2DDB[model_id] = tbl = db[DB_NAMESPACE_DISTS]   # no model id since maybe we'll connect words across models
@@ -27,5 +31,3 @@ def get_distdb(model_id):
 		tbl.create_index('source')
 		tbl.create_index('target')
 	return M2DDB[model_id]
-
-

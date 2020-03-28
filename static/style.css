@@ -560,7 +560,11 @@ input { font-family:"Droid Sans"; margin:0; }
 
 
 
-  #analyze_word_button { width: 150px; height:35px; margin-top:25px; margin-bottom:50px;}
+  #analyze_word_button { width: 150px; height:35px; 
+    /*margin-top:25px; margin-bottom:50px;*/
+    /*margin-top:1em;margin-bottom:1em;*/
+    margin-bottom:25px;
+  }
 
 
   #footer { 
@@ -582,8 +586,11 @@ max-width: 960px
 
 
    #period_controls {
-    margin-left:1em; font-size:0.9em;
+    margin-left:1em; font-size:0.8em;
    }
+
+
+   /*.li_period { font-size:10px; color:red; }*/
 
 
 

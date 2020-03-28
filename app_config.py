@@ -1,4 +1,6 @@
 ### Constants
+DEFAULT_WORD_STR='data,work,culture'
+
 
 # GLOBAL_OPTS = {'fields':get_fields(), 'vecs':VECS, 'x_vec':'umap_V3', 'y_vec':'umap_V4'}
 # GLOBAL_OPTS['all_fields_vecs'] = sorted(list(set(GLOBAL_OPTS['fields'] + GLOBAL_OPTS['vecs'])))
@@ -13,6 +15,7 @@ GLOBAL_OPTS['y_vec_str']='Young - Old'
 # different async modes, or leave it set to None for the application to choose
 # the best option based on installed packages.
 async_mode = None
+#async_mode = 'gevent'
 
 DEFAULT_CORPUS = 'COHA'
 DEFAULT_PERIOD_TYPE = 'byhalfcentury'
@@ -49,12 +52,6 @@ DEFAULT_EXPAND_N = 2
 DEFAULT_N_SIMILAR = 1
 DEFAULT_N_TOP = 50
 
-# logger
-def log(x):
-    print(x)
-    emit('status','(server) '+x)
-
-
 
 
 
@@ -68,4 +65,4 @@ DB_NAMESPACE_DISTS = 'dists'
 
 
 
-MAX_NUM_VECS_TO_STORE = 25000
+MAX_NUM_VECS_TO_STORE = 50000

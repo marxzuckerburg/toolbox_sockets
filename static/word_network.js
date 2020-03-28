@@ -26,7 +26,7 @@ function draw_net(data) {
 
 
 
-function draw_nets(data, div_id='networks', div_net_id='net_canvas', div_net_class='net_div') {
+function draw_nets(data, opts={}, div_id='networks', div_net_id='net_canvas', div_net_class='net_div') {
 	console.log('draw_nets::',data)
 	// $('#cmdbar_net').show();
 	$('#'+div_id).html('')
@@ -52,7 +52,7 @@ function draw_nets(data, div_id='networks', div_net_id='net_canvas', div_net_cla
 		newdivhtml='<div id="'+this_net_div_id+'" class="'+div_net_class+'">'+nettitle+'</div>'
 		$('#'+div_id).append(newdivhtml)
 		
-		draw_net_springy(net, this_net_div_id)
+		draw_net_springy(net, this_net_div_id, opts=opts)
 		
 		if(i>0) { $('#'+this_net_div_id).hide() }
 	})
@@ -70,7 +70,7 @@ function draw_nets(data, div_id='networks', div_net_id='net_canvas', div_net_cla
 }
 
 
-function draw_net_springy(data, div_id, div_class='net_canvas') {
+function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	var canvas_id=div_id+'_canvas'
 	$('#'+div_id).append('<canvas id="'+canvas_id+'" class="'+div_class+'" min-width="600px" width="900px" height="750px" />')
 
@@ -119,7 +119,7 @@ function draw_net_springy(data, div_id, div_class='net_canvas') {
 	  	// 	period2color[node_d['period']] = period2color[node_d['period']]
 	  	// }
 	  	node_d['label']=node_d['label'].split('_')[0]
-	  	node_d['color'] = period2color[period]
+	  	if (opts['combine_periods']!='average') { node_d['color'] = period2color[period] }
 	  } else if (sources.includes(id)) {
 	  	// node_d['color'] = '#1B4F72'
 	  } else {

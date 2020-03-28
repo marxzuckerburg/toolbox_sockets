@@ -1,5 +1,6 @@
 import logging,time,os
 import numpy as np
+import pandas as pd
 import db as DB
 from tqdm import tqdm
 from app_config import *
@@ -14,10 +15,10 @@ fn2voc={}
 
 class Embedding(object): 
 
-	def __init__(self,model_id,model_fn,model_periods=[]):
-		self.fn = model_fn
-		self.periods=model_periods
-		self.id=model_id
+	def __init__(self,id,fn,periods=[]):
+		self.fn = fn
+		self.periods=periods
+		self.id=id
 		self.log=lambda x: print(x+'\n') #logging.info
 		self.progress=logging.info
 
@@ -34,6 +35,21 @@ class Embedding(object):
 			self._gensim = gensim.models.KeyedVectors(vector_size=300)
 			all_words,all_vecs = self.get_all_word_vecs()
 			self._gensim.add(all_words,all_vecs)
+
+			# self.log('generating model from vectors stored on disk: '+self.fn)
+			# all_words=[]
+			# all_vecs=[]
+			# with open(self.fn) as f:
+			# 	for i,ln in enumerate(f):
+			# 		if not i: continue
+			# 		lndat=ln.strip().split()
+			# 		all_words.append(lndat[0])
+			# 		all_vecs.append([float(x) for x in lndat[1:]])
+			# self._gensim = gensim.models.KeyedVectors(vector_size=300)
+			# self._gensim.add(all_words,all_vecs)
+
+			# self._gensim=gensim.models.KeyedVectors.load_word2vec_format(self.fn)
+			
 			tdist=round(time.time()-now,1)
 			self.log('done loading model in %ss' % tdist)
 		return self._gensim
@@ -65,18 +81,18 @@ class Embedding(object):
 		self.log('building network...')
 		import networkx as nx
 		G=nx.DiGraph()
-		for d in tqdm(self.distdb.find()):
+		for d in tqdm(self.distdb.find(),total=MAX_NUM_VECS_TO_STORE):
 			if n_top and d['sim_rank']>n_top: continue
 			G.add_edge(d['source'],d['target'],weight=d['weight'],sim_rank=d['sim_rank'])
 		return G
 
 	## DATA GENERATION
 
-	def build_vecdb(self,max_num_vecs=MAX_NUM_VECS_TO_STORE):
+	def build_vecdb(self,max_num_vecs=None):
 		with open(self.fn) as f:
-			for i,ln in enumerate(tqdm(f)):
+			for i,ln in enumerate(tqdm(f,total=None)):
 				if i==0: continue
-				if i>max_num_vecs: break
+				# if i>max_num_vecs: break
 				lndat=ln.split()
 				word=lndat[0]
 				wordvecs=[float(x) for x in lndat[1:]]
@@ -143,7 +159,8 @@ class Embedding(object):
 	def get_all_word_vecs(self):
 		all_words=[]
 		all_vecs=[]
-		for d in tqdm(self.db.find()):
+		#for d in tqdm(self.db.find().batch_size(1000),total=self.db.count()):
+		for d in self.db.find().batch_size(100):
 			try:
 				all_words.append(d['word'])
 				all_vecs.append(d['vecs'])
@@ -215,27 +232,87 @@ class Embedding(object):
 
 	## GETTING SIMILARITY CALCULATIONS
 
+	def get_most_similar_from_distdb(self,word,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
+		# return [  (d['target'],d['weight']) for d in self.distdb.find({'source':word}) ]
+		new_name_sims=[]
 
-	def get_most_similar(self,words,periods=None,combine_periods=DEFAULT_COMBINED_PERIODS):
+
+		print('get_most_similar_from_distdb('+word+')')
+
+		for edge_d in self.distdb.find({'source':word}):
+			#if edge_d['sim_rank']>n_top: continue
+			# print(edge_d)
+
+			new_sim_d={}
+			new_sim_d['id']=id1=edge_d['source']
+			new_sim_d['id2']=id2=edge_d['target']
+			worddat1=deperiodize_str(id1)
+			worddat2=deperiodize_str(id2)
+			new_sim_d['word'] = wordname1 = worddat1[0]
+			new_sim_d['word2'] =wordname2 = worddat2[0]
+			new_sim_d['period'] = period1 = worddat1[1]
+			new_sim_d['period2'] = period2 = worddat2[1]
+			new_sim_d['csim']=edge_d['weight']
+			new_sim_d['csim_rank']=edge_d['sim_rank']
+			# combine across periods?
+			new_name_sims.append(new_sim_d)
+
+		##  name_sims average?
+		if combine_periods=='average' and new_name_sims:
+			self.log('averaging results by period (`combine_periods` set to "average")')
+			new_name_sims=average_periods(new_name_sims,val_key='csim',word_key='word2',period_key='period2')
+		
+		#print('final ld:')
+		final_ld=new_name_sims[:n_top]
+		#print(pd.DataFrame(final_ld))
+		return final_ld
+
+
+
+	def get_most_similar(self,words,n_top=DEFAULT_N_TOP,periods=None,combine_periods=DEFAULT_COMBINED_PERIODS):
 		if periods is None: periods=self.periods
 		if combine_periods in {'simultaneous','diachronic'}:
 			words=periodize(words, periods)
+
+		most_similar_data = []
+		words_with_cached_dists = []
+		words_with_uncached_dists = []
+
+		for w in words:
+			simdat = self.get_most_similar_from_distdb(w,n_top=n_top,combine_periods=combine_periods)
+			if simdat:
+				words_with_cached_dists.append(w)
+				most_similar_data.extend(simdat)
+			else:
+				words_with_uncached_dists.append(w)
+
+		self.log('found cached distance results for: '+', '.join(words_with_cached_dists))
+		self.log('did not find cached distance results for: '+', '.join(words_with_uncached_dists))
 		
-		self.log('input split into: ' + ', '.join(words))
-		name2vec = self.get_vectors(words)
-		self.log('got name2vec with %s vectors' % len(name2vec))
-		most_similar_data = self.get_most_similar_by_vector(name2vec)
+		self.log('remaining input split into: ' + ', '.join(words_with_cached_dists))
+		msd2=self.get_most_similar_by_vector(words_with_uncached_dists,n_top=n_top,combine_periods=combine_periods)
+		most_similar_data.extend(msd2)
+
+
+
 		return most_similar_data
 
 
-	def get_most_similar_by_vector(self,name2vec,**args):
-		return self.get_most_similar_by_vector_by_gensim(name2vec,**args)
+	def get_most_similar_by_vector(self,words,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
+		name2vec = self.get_vectors(words)
+		self.log('got name2vec with %s vectors' % len(name2vec))
+		return self.get_most_similar_by_vector_by_gensim(name2vec,n_top=n_top,combine_periods=combine_periods)
 
+	
 	def get_most_similar_by_vector_by_gensim(self,name2vec,n_top=DEFAULT_N_TOP,combine_periods=DEFAULT_COMBINED_PERIODS):
 		all_sims=[]
 		for name,vec in sorted(name2vec.items()):
-
-			name_sims = self.gensim.wv.similar_by_vector(vec,topn=n_top+1)
+			# print('name:',name)
+			# print('vec:',vec)
+			try:
+				name_sims = self.gensim.wv.similar_by_vector(vec,topn=DEFAULT_N_TOP)  #(n_top*5)+1)
+			except TypeError:
+				continue
 			self.log('got back from gensim for similar_by_vector: '+str(name_sims))
 
 			new_name_sims=[]
@@ -246,6 +323,9 @@ class Embedding(object):
 				new_sim_d={}
 				new_sim_d['id']=id1=name
 				new_sim_d['id2']=id2=match
+
+				print('!?!?',id1,id2)
+
 				worddat1=deperiodize_str(id1)
 				worddat2=deperiodize_str(id2)
 				new_sim_d['word'] = wordname1 = worddat1[0]
@@ -258,107 +338,16 @@ class Embedding(object):
 				# combine across periods?
 				new_name_sims.append(new_sim_d)
 
-
-				# if((period1!=undefined) & (opts['combine_periods']=='diachronic') & (period2!=period1)) {
-				# 	#  skip because let's not compare across periods in that case
-				# 	#  print('yep!!')
-				# } else {
-
-				# 	#  print('new_sim_d!?',new_sim_d)
-				# 	if((!(id2 in name2vec)) &(!(wordname2 in name2vec)) &(unique_words.size<n_top)) {
-				# 		#  if we either want all periods, or periods wanted includes this one
-				# 		if(periods==undefined | (periods.includes(period2))) {
-				# 			#  start a new dictionary
-				# 			name_sims.push(new_sim_d)
-
-
-				# 			#  print('new_sim_d',new_sim_d)
-				# 			if(!(unique_words.has(wordname2))) {
-				# 				unique_words.add(wordname2)
-				# 			}
-						
-				# 		}
-				# 	}
-				# }
-				# })
-
 			#  name_sims average?
-			if(combine_periods=='average'):
-				new_name_sims=average_periods(new_name_sims,val_key='csim',word_key='id2',period_key='period2')
+			if combine_periods=='average' and new_name_sims:
+				new_name_sims=average_periods(new_name_sims,val_key='csim',word_key='word2',period_key='period2')
 
-
-			all_sims.extend(new_name_sims)
+			all_sims.extend(new_name_sims[:n_top])
 		
 		self.log('collecting '+str(len(all_sims))+' cosine sims')
 		return all_sims
 	
 
-# 	#  self.get_most_similar_by_vector = function(opts) {
-# 	#  	print('OPTS!','get_most_similar_by_vector',opts)
-# 	#  	var name2vec=opts['name2vec']
-# 	#  	var n_top=opts['n_top']
-# 	#  	var periods = opts['periods']
-# 	#  	if(n_top==undefined) { n_top = DEFAULT_N_SIMILAR }
-
-
-# 	#  	all_sims = []
-# 	#  	n_names = 0
-# 	#  	for(var name in name2vec) { n_names++ }
-# 	#  	i_names=0
-
-
-# 	#  	for(var name in name2vec) {
-# 	#  		#  self.progress(i_names/n_names, opts)
-# 	#  		i_names++
-# 	#  		self.log('getting '+ n_top +' nearest word vectors to: ' + name)
-# 	#  		vec=name2vec[name]
-# 	#  		# print('vec!',name,vec)
-# 	#  		sims = this.M.getNearestWords(vec, (n_top+1)*5)
-# 	#  		#  sims = this.M.getNearestWords(vec, (n_top+1)*2)
-# 	#  		name_sims=[]
-# 	#  		unique_words=new Set()
-# 	#  		sims.forEach(function(sim_d) {
-# 	#  			new_sim_d={}
-# 	#  			new_sim_d['id']=id1=name
-# 	#  			new_sim_d['id2']=id2=sim_d['word']
-# 	#  			worddat1=deperiodize_str(id1)
-# 	#  			worddat2=deperiodize_str(id2)
-# 	#  			new_sim_d['word'] = wordname1 = worddat1[0]
-# 	#  			new_sim_d['word2'] =wordname2 = worddat2[0]
-# 	#  			new_sim_d['period'] = period1 = worddat1[1]
-# 	#  			new_sim_d['period2'] = period2 = worddat2[1]
-# 	#  			new_sim_d['csim']=sim_d['dist']
-# 	#  			if((period1!=undefined) & (opts['combine_periods']=='diachronic') & (period2!=period1)) {
-# 	#  				#  skip because let's not compare across periods in that case
-# 	#  				#  print('yep!!')
-# 	#  			} else {
-
-# 	#  				#  print('new_sim_d!?',new_sim_d)
-# 	#  				if((!(id2 in name2vec)) &(!(wordname2 in name2vec)) &(unique_words.size<n_top)) {
-# 	#  					#  if we either want all periods, or periods wanted includes this one
-# 	#  					if(periods==undefined | (periods.includes(period2))) {
-# 	#  						#  start a new dictionary
-# 	#  						name_sims.push(new_sim_d)
-
-
-# 	#  						#  print('new_sim_d',new_sim_d)
-# 	#  						if(!(unique_words.has(wordname2))) {
-# 	#  							unique_words.add(wordname2)
-# 	#  						}
-						
-# 	#  					}
-# 	#  				}
-# 	#  			}
-# 	#  		})
-
-# 	#  		#  final average
-# 	#  		if(opts['combine_periods']=='average') { name_sims=average_periods(name_sims,val_key='csim',word_key='word2',period_key='period2') }
-
-# 	#  		all_sims.push(...name_sims)
-# 	#  	}
-# 	#  	#  print('all_sims',all_sims.length)
-# 	#  	return all_sims
-# 	#  }
 
 # 	self.get_expanded_wordset = function(opts) {
 # 		print('get_expanded_wordset()',opts)
@@ -397,78 +386,6 @@ class Embedding(object):
 # 	#  self.progress(1.0,opts)
 # 	return Model
 # }
-
-
-
-
-
-
-# #  Get vocabulary from a vocab fn
-# function get_vocab(fn) {
-# 	return new Promise(function(resolve,reject) {
-		
-# 		fs.readFile(fn, "UTF8", function(err, data) {
-# 			var all_vocab =[]
-# 			vtxt=data
-# 			var all_vocab=[]
-# 			#  print(fn)
-# 			lines=vtxt.split('\n')
-# 			lines.forEach(function(line) {
-# 				#  print(line)
-# 				word=line.split(' ')[0]
-# 				# print(word)
-# 				all_vocab.push(word)
-# 			});
-# 			#  print('all_vocab',all_vocab)
-# 			resolve(all_vocab)
-# 		})
-		
-# 	});
-# }
-
-
-# #  get model (as a promise)
-# async function get_model(w2v_fn = DEFAULT_W2V_FN) { 
-# 	#  print('>> loading w2v_fn:',w2v_fn)
-# 	var voc_fn=w2v_fn.replace('.txt','.vocab.txt')
-# 	var model_promise
-# 	var vocab_promise
-# 	if(w2v_fn in fn2M) {
-# 		print('>> RESTORING FROM CACHE:',w2v_fn)
-# 		vocab_promise = new Promise(function(res,rej) { res(fn2voc[w2v_fn]) })
-# 		model_promise = new Promise(function(res,rej) { res(fn2M[w2v_fn]) })
-# 	} else {
-# 		model_promise = new Promise(function(res,rej) { 
-# 			w2v.loadModel(w2v_fn,function(err,model) {
-# 				fn2M[w2v_fn]=model
-# 				# print('loaded',w2v_fn,model)
-# 				res(model)
-# 			})
-# 		})
-# 		vocab_promise = new Promise(function(res,rej) { 
-# 			get_vocab(voc_fn).then(function(all_vocab) {
-# 				fn2voc[w2v_fn]=all_vocab
-# 				res(all_vocab)
-# 			})
-# 		})
-# 	}
-# 	M = await model_promise
-# 	Voc = await vocab_promise
-# 	# print("mvoc2",M,Voc)
-# 	return [M,Voc]
-# }
-
-
-# #  function opts2model_fn(opts) {
-# #  	print(opts,'??????')
-# #  	print('model_id: ',opts['model_id'])
-# #  	res=W2V_MODELS[opts['model_id']]
-# #  	print('model res:',res)
-# #  	return res
-# #  }
-
-
-
 
 
 
@@ -680,7 +597,24 @@ def deperiodize_str(wordstr):
 			period=wpiece.split('_')[1]
 			periods.append(period)
 			new_word_pieces.append(word)
-	return (''.join(new_word_pieces), periods[0])
+	return (''.join(new_word_pieces), periods[0] if periods else '')
+
+
+def average_periods(word_ld,val_key='csim',word_key='word',period_key='period',periods=None):
+	import pandas as pd
+	word_df=pd.DataFrame(word_ld)
+	print('ORIG:\n',word_df.shape,'\n',word_df)
+	if periods: word_df=word_df[word_df[period_key].isin(periods)]
+	word_df_mean = word_df.groupby(word_key).mean().reset_index()
+	word_df2=word_df.groupby(word_key).first().reset_index()
+	lost_cols = list(set(word_df2.columns) - set(word_df_mean.columns))
+	word_df_mean = word_df_mean.merge(word_df2[lost_cols+[word_key]], on=word_key,how='left')
+	word_df_mean=word_df_mean[word_df.columns]
+
+	print('AVGS:\n',word_df_mean.shape,'\n',word_df_mean.sort_values('csim_rank'))
+
+	return word_df_mean.sort_values('csim_rank').to_dict('records')
+
 
 
 
@@ -765,9 +699,11 @@ def deperiodize_str(wordstr):
 
 
 if __name__=='__main__':
-	e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
-	e.build_vecdb()
-	e.build_distdb()
+	pass
+
+	#e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
+	#e.build_vecdb()
+	#e.build_distdb()
 
 
 

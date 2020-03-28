@@ -12,19 +12,13 @@
     <script src="/static/d3.v4.js"></script>
     <script>var d3v4 = window.d3; window.d3 = null;</script>
     <script src="/static/d3.v3.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script type="text/javascript" src="/static/progressbar.js"></script>
+    <script src="/static/socket.io.js"></script>
     <script src="/static/jquery.magnific-popup.min.js"></script>
-    <script src="/static/math.min.js"></script>
-    <script src="/static/selectize.min.js"></script>
     <script src="/static/jquery-ui.js"></script>
-    <script src="/static/chroma.min.js"></script>
     
-
     <!-- css -->
     <link rel="stylesheet" href="/static/jquery-ui.css" />
     <link rel="stylesheet" href="/static/magnific-popup.css">
-    <link rel="stylesheet" href="/static/selectize.css" />
     <link rel="stylesheet" href="/static/style.css" />
     <!-- <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Ubuntu+Mono" /> -->
     <!-- <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" /> -->
@@ -32,10 +26,10 @@
 
 
     <!-- custom -->
-    <script src="/static/base.js"></script>
-    <script type="text/javascript" src="/static/vector_math.js"></script>
-    <script type="text/javascript" src="/static/word.js"></script>
-    <script type="text/javascript" src="/static/word-client.js"></script>
+    <!-- <script src="/static/base.js"></script> -->
+    <!-- <script type="text/javascript" src="/static/vector_math.js"></script> -->
+    <!-- <script type="text/javascript" src="/static/word.js"></script> -->
+    <!-- <script type="text/javascript" src="/static/word-client.js"></script> -->
     <script type="text/javascript" src="/static/springy.js"></script>
     <script type="text/javascript" src="/static/springyui.js"></script>
     <script type="text/javascript" src="/static/drawing.js"></script>
@@ -66,12 +60,24 @@
   <!-- <hr/> -->
   <br/>
 
-  <h3>Analyze word(s)</h3>
-  
-  
-  <textarea id="analyze_word" type="textbox" name="word">value-importance
+  <h3>Analyze word(s)</h3> 
+  <textarea id="analyze_word" type="textbox" name="word">value
+values
+price
+importance
+value-price
+value-importance
 </textarea>
+<!-- <small><a href="javascript:void(0)" id="expand_words">Auto-add similar</a></small> -->
 <!-- 
+price
+rate
+worth
+importance
+value-price
+
+
+
 value
 price
 rate
@@ -96,12 +102,18 @@ value-importance -->
 
 
   <div id="button_row">
-    <div style="float:left; font-size:10px"><button type="button" class='analyze_button' id='link_expand'>Auto-expand</button> by <input type="text" id="expand_n" value="1"></input></div>
+    <div style="float:left; font-size:0.8em"><a href="javascript:void(0)" id="expand_words">Auto-add similar</a></div>
 
-    <!-- <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button> -->
+    <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
   </div>
 
-  <br/><br/>
+  <!-- <br/> -->
+  <!-- <br/><br/> -->
+
+   <!-- <center>
+      <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
+    </center>
+    <br/> -->
 
   <h3>Method</h3>
 
@@ -132,27 +144,23 @@ value-importance -->
       <!-- <option value="COHA_bythirtyyear_nonf">COHA (Am. C19-C20 non-fiction, per 30 yr)</option> -->
     </select>
 
+    <br/>Periods shown:
+    <div id="period_controls">
+        <input class="combine_periods_opt" type="radio" name="combined_periods_by" value="simultaneous" checked>Synchronic</input>
+        <br/><input class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic">Diachronic</input>
+        <br/><input class="combine_periods_opt" type="radio" name="combined_periods_by" value="average">Averaged</input>
+    </div>
 
+
+    Periods included:
     <div id="periods">
       <!-- <br/><input type="checkbox" class="period_input" id="period_combined" name="period_combined" value="combined" /> All (combined) -->
       <a href="javascript:void(0)" id="link_check_all_periods">(Check all)</a>
     </div>
-
-
-    Shown as:
-    <div id="period_controls">
-        <!-- <a href="javascript:void(0)" id="link_average_periods">averaging</a> -->
-        <!-- <a href="javascript:void(0)" id="link_diachronic_periods">diachronic</a> -->
-        <input type="radio" name="combined_periods_by" value="diachronic" checked>Diachronic</input>
-        <br/><input type="radio" name="combined_periods_by" value="average">Averaged</input>
-        <br/><input type="radio" name="combined_periods_by" value="simultaneous">Simultaneous</input>
-
-
-    </div>
     
     
     <!-- <center> -->
-      <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
+      <!-- <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button> -->
     <!-- </center> -->
     
     <input type="hidden" id="subpage" value=""></input>

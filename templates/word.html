@@ -1,14 +1,14 @@
-{% extends "base2.html" %}
+{% extends "base.html" %}
 
 
 
 
 {%block cmdbar %}
 
-<div id="cmdbar_net" style="display:none">
+<div id="cmdbar_net" style="">
 
 	<h3>Network of similar words</h3>
-	<li>Link to closest N neighbors: <input type='textbox' id='n_top' value="10" style="width:2em;"></input></li>
+	<li>Link to closest N neighbors: <input type='textbox' id='n_top' value="5" style="width:2em;"></input></li>
 	<!-- <input id="periods" multiple> -->
 		<!-- <option value="combined">(combined)</option> -->
 		<!-- added by jquery to follow: -->
@@ -41,7 +41,7 @@
 
 <script>
 
-	const W2V_MODELS = {{W2V_MODELS | dump | safe}};
+	const W2V_MODELS = {{W2V_MODELS|tojson}}
 
 
 function get_model_dat() {
@@ -152,14 +152,14 @@ function reset_periods() {
 		max_period=2 
 	}
 
-	$('#periods').html('Periods: ')
+	$('#periods').html('')
 	init_periods.forEach(function(period,i) {
 		period_nice = mdat['periods_nice'][i]
 		// $('#periods').append('<option value="'+period+'">'+period+'</option>')
 		var is_checked='checked'
 		// var is_checked=''
 		// if(i<max_period) { is_checked='checked'}
-		$('#periods').append('<li class="li_period"><input type="checkbox" class="period_input" name="period_'+period+'" value="'+period+'" '+is_checked+' /> '+period_nice+'')
+		$('#periods').append('<li style="font-size:0.8em" class="li_period"><input type="checkbox" class="period_input" name="period_'+period+'" value="'+period+'" '+is_checked+' /> '+period_nice+'')
 	});
 }
 
@@ -411,7 +411,7 @@ $(function () {
 		
 		if (view==undefined) { var view=get_cmd(); }
 
-		all_periods = use_all_periods()
+		// all_periods = use_all_periods()
 		//console.log('view',view)
 		// console.log('all_periods',all_periods)
 
@@ -496,7 +496,7 @@ $(function () {
 		log('received similarity network data')
 		log('drawing similarity network data')
     	
-    	draw_nets(response_data.data)
+    	draw_nets(response_data.data, opts=get_opts())
     	
     	$('#loading_msg').hide(); //$('#status').show()
     	// $('#progressbar').progressbar('option', 'value', 0);
@@ -571,6 +571,7 @@ $(function () {
 	$('#n_top').bind("enterKey",function(e){ analyze_word(); });
 	$('#n_top').keyup(function(e){ if(e.keyCode == 13) { $(this).trigger("enterKey");}});
 	// $('.period_input').change(function(){ analyze_word();});
+	$('.combine_periods_opt').change(function(){ analyze_word(); });
 });
 
 </script>
