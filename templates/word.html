@@ -17,7 +17,7 @@
 			<option value='20'>20</option>
 			<option value=''>50</option>
 		</select>
-		neighbors:
+		neighbors
 	</li>
 
 		<!-- <input type='textbox' id='n_top' value="5" style="width:2em;"></input></li> -->
@@ -648,12 +648,13 @@ $(function () {
 	// FINAL JQUERY BEFORE LOADING
 	// $('#analyze_word').val("{{DEFAULT_WORD_STR}}")
 	//init_selectize()
+	$('#link_expand').hide()
 	$('#link_expand').click(function() { analyze_word(subpage='expand') })
-	$('#link_umap').click(function() { analyze_word(subpage='umap') })
+	// $('#link_umap').click(function() { analyze_word(subpage='umap') })
 	$('#link_simnet').click(function() { analyze_word(subpage='simnet') })
-	$('#link_spaces').click(function() { analyze_word(subpage='spaces') })
-	$('#link_custom').click(function() { analyze_word(subpage='custom') })
-	$('#link_ranks').click(function() { analyze_word(subpage='ranks') })
+	// $('#link_spaces').click(function() { analyze_word(subpage='spaces') })
+	// $('#link_custom').click(function() { analyze_word(subpage='custom') })
+	// $('#link_ranks').click(function() { analyze_word(subpage='ranks') })
 	$('#model_id').change(function(){ reset_periods(); analyze_word();  });
 	$('#analyze_word_button').click(function() { analyze_word();});
 	$('#n_top').change(function(){ reset_periods(); analyze_word();  });
