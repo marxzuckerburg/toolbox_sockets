@@ -482,7 +482,7 @@ class Embedding(object):
 				name_sims = self.gensim.wv.similar_by_vector(vec,topn=DEFAULT_N_TOP)  #(n_top*5)+1)
 			except TypeError:
 				continue
-			self.log('got back from gensim for similar_by_vector: '+str(name_sims))
+			self.log('got back from gensim for similar_by_vector: '+str(name_sims)[:50]+' ...')
 
 			new_name_sims=[]
 			for xi,x in enumerate(name_sims[1:]):
