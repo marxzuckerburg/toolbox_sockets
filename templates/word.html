@@ -53,6 +53,77 @@
 
 <script>
 
+
+function netswitch(div_id) { 
+	$('#graph_div_being_used').val(div_id)
+	$('.net_div').hide()
+	$('#'+div_id).show()
+}
+
+function netnext() { return netchange(change_by_adding=1) }
+function netprev() { return netchange(change_by_adding=-1) }
+
+function netchange(change_by_adding=1) {
+	// div_id=$('#graph_div_being_used').val()
+	div_used = $('.net_div:visible')[0]
+	console.log('div_used',div_used)
+
+	div_id=$(div_used).attr('id')
+	console.log('div_id',div_id)
+
+	div_num=parseInt(div_id.slice(-1))
+	console.log('div_num',div_num)
+
+	new_div_num=div_num+change_by_adding
+	console.log('new_div_num',new_div_num)
+
+	
+	new_div_id=div_id.slice(0,-1) + new_div_num.toString()
+	console.log('new_div_id',new_div_id)
+
+	if ( $( "#"+new_div_id ).length ) { 
+		$('#'+div_id).hide()
+		$('#'+new_div_id).show()
+		$('#graph_div_being_used').val(new_div_id)
+
+
+		period=$('#'+new_div_id + ' #period_title_above_graph').text().trim().split(' ')[1].split('-')[0]
+		console.log('get_period',period)
+		$('#period').val(period)
+
+		// update_url()
+		// url=get_self_url(opts)
+		var urld = new URLSearchParams(window.location.search)
+		// if(urld.has('period')) { urld.delete('period') }
+		console.log('period!?',period)
+		console.log(urld.get('period'))
+		urld.delete('period')
+		urld.set('period',period)
+		
+		new_search_url = urld.toString().split('%2C').join(',').split('%20').join('').split('%3E').join('>')
+		console.log('new_search_url',new_search_url)
+
+		new_url = location.protocol + '//' + location.host + location.pathname + '?' + new_search_url
+
+		window.history.pushState({state: "dummyState"}, "Title", new_url)
+
+		$('#url_citation').html('<a href="'+new_url+'" target="_blank">'+new_url+'</a>')
+
+		make_footer()
+	}
+}
+
+// function update_url(opts=undefined) {
+// 	url=get_self_url(opts)
+// 	window.history.pushState({state: "dummyState"}, "Title", url)
+// }
+
+
+
+$(function () {
+
+
+
 	const W2V_MODELS = {{W2V_MODELS|tojson}}
 
 
@@ -171,7 +242,10 @@ function reset_periods() {
 		var is_checked='checked'
 		// var is_checked=''
 		// if(i<max_period) { is_checked='checked'}
-		$('#periods').append('<li style="font-size:0.8em" class="li_period"><input type="checkbox" class="period_input" name="period_'+period+'" value="'+period+'" '+is_checked+' /> '+period_nice+'')
+		
+
+
+		$('#periods').append('<li style="font-size:0.8em" class="li_period"><input id="period_checkbox_'+period+'" type="checkbox" class="period_input" name="period_'+period+'" value="'+period+'" '+is_checked+' /> '+period_nice+'')
 	});
 }
 
@@ -255,324 +329,349 @@ function progress(n) {
 	// $( "#progressbar" ).progressbar({ value: n*100 });
 }
 
-function netswitch(div_id) { 
-	$('#graph_div_being_used').val(div_id)
-	$('.net_div').hide()
-	$('#'+div_id).show()
+function make_caption() {
+	opts=get_opts()
+	model_dat=get_model_dat()
+	html='Corpus: '+model_dat['corpus_desc']
+	html+='<br/>'
+	html+='Period'
+
+	// get nice period
+
+	if(opts['periods'].length>1) { html+='s'}
+	// html+=' shown here:'
+	html+=' (n='+opts['periods'].length+'): '
+	opts['periods'].forEach(function(p,_i) { 
+		//html+=' '+p 
+		pi = model_dat['periods'].indexOf(p)
+		pnice=model_dat['periods_nice'][pi]
+		color=COLORS[pi]
+		pnice_html = '<span style="color:'+color+'">'+pnice+'</span>'
+		if(_i>0) { html+=',' }
+		html+=' '+pnice_html
+	})
+
+
+	//
+	wordstr=opts['words'].slice(0,50).join(', ')
+	wordstr=wordstr.replace('>','⟶')
+	html+='<br/>Words (n='+opts['words'].length+'): '+wordstr
+
+	$('#caption').html(html)
 }
 
-function netnext() { return netchange(change_by_adding=1) }
-function netprev() { return netchange(change_by_adding=-1) }
 
-function netchange(change_by_adding=1) {
-	// div_id=$('#graph_div_being_used').val()
-	div_used = $('.net_div:visible')[0]
-	console.log('div_used',div_used)
+function make_footer() {
+	title=$('#fig_title').html()
+	footer=''
+	if(title) {
+		footer+='“'+title+'”. '
+	}
 
-	div_id=$(div_used).attr('id')
-	console.log('div_id',div_id)
+	footer+='Cambridge Keydata Project, 2020, '
+	footer+='<span id="url_citation"><a href="'+url+'" target="_blank">'+url+'</a></span>.'
 
-	div_num=parseInt(div_id.slice(-1))
-	console.log('div_num',div_num)
+	var dateObj = new Date();
+	// var month = dateObj.getUTCMonth() + 1; //months from 1-12
+	var day = dateObj.getUTCDate();
+	var year = dateObj.getUTCFullYear();
+	var monthNames = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
+	var month = monthNames[dateObj.getUTCMonth()]
 
-	new_div_num=div_num+change_by_adding
-	console.log('new_div_num',new_div_num)
+	newdate = day+' '+ month + ' ' + year
 
-	
-	new_div_id=div_id.slice(0,-1) + new_div_num.toString()
-	console.log('new_div_id',new_div_id)
+	footer+=' Accessed '+newdate+'.'
 
-	if ( $( "#"+new_div_id ).length ) { 
-		$('#'+div_id).hide()
-		$('#'+new_div_id).show()
+	$('#footer').html(footer)
+	return footer
+}
+
+
+function get_opts() {
+	mdat=get_model_dat()
+	opts={}
+	opts['words']=split_words($('#analyze_word').val().replace('⟶','>'))
+	opts['n_top']=$('#n_top').val();
+	opts['expand_n']=$('#expand_n').val();
+	opts['model_id']=get_model_id()
+	opts['combine_periods']=$('input[name="combined_periods_by"]:checked').val()
+	for(var mk in mdat) {
+		opts['model_'+mk]=mdat[mk]
+	}
+	// opts['periods']=$(".period_input").val()
+	opts['periods']=[]
+	$('.period_input:input:checked').map(function(){opts['periods'].push($(this).val()) })
+
+	opts['subpage']=get_subpage()
+	// console.log('!opts!',opts)
+
+	if(opts['periods'].length==0) { opts['periods']=opts['model_periods'] }
+
+	opts['period']=$('#period').val()
+	return opts
+}
+
+
+function get_self_url(opts=undefined) {
+	if(opts==undefined) { opts=get_opts() }
+
+	url_server='http://'+window.location.href.split('/')[2].replace(/\/+$/, "")
+
+	url = url_server
+	url+='?word=' + opts['words'].join(',')
+	url+='&view=' + opts['subpage']
+	url+='&model_id=' + opts['model_id']
+	// url+='&periods=' + opts['periods'].join(',')
+	url+='&n_top='+opts['n_top']
+	url+='&temporality=' + opts['combine_periods']
+
+	if(opts['period']) { url+='&period='+opts['period'] }
+
+	return url
+}
+
+function enact_options_in_url() {
+	var url = new URLSearchParams(window.location.search)
+
+	if(url.has('word')) { $('#analyze_word').val(url.get('word')) }
+	if(url.has('view')) { $('#subpage').val(url.get('view')) }
+	if(url.has('model_id')) { $('#model_id').val(url.get('model_id')) }
+	if(url.has('n_top')) { $('#n_top').val(url.get('n_top')) }
+	if(url.has('temporality')) { 
+		$('#combine_periods__'+url.get('temporality')).prop('checked',true)
+	}
+
+	// periods?
+	if(url.has('periods')) {
+		periods=url.get('periods').split(',')
+		console.log('periods!?',periods)
+		$('.period_input').prop('checked',false)
+		periods.forEach(function(p,i) {
+			// idx='#period_checkbox_'+p
+			idx='input[name=period_'+p+']'
+			console.log(i,p,idx,$(idx))
+			$(idx).prop('checked',true)
+		})
 	}
 }
 
+function period2nice(p,opts) {
+	pi = opts['model_periods'].indexOf(p)
+	pnice = opts['model_periods_nice'][pi]
+	return pnice
+}
+
+function period2color(p,opts,colors=COLORS) {
+	pi = opts['model_periods'].indexOf(p)
+	return colors[pi]
+}
 
 
-$(function () {
+function analyze_word(subpage=undefined) {
+	var opts=get_opts()
+	if(opts['combine_periods']!='diachronic') { 
+		opts['period']=''
+		$('#period').val('')
+	}
+	url=get_self_url(opts)
+	console.log('SETTING URL TO:',url)
+	window.history.pushState({state: "dummyState"}, "Title", url)
 
+	make_caption()
 	
 
-	var socket = io();
-
-	// $( "#progressbar" ).progressbar( "enable" );
-	$('#progressbar').hide()
-	$( "#progressbar" ).progressbar({ value: 0.0,classes:{'ui-progressbar':'highlight' } });
+	// $( "#progressbar" ).progressbar({ value: 0.0 });
+	$( "#progressbar" ).progressbar({ value: false });
 
 
-	// var bar = make_progress_bar('#progressbar')
-	// bar.animate(0.0)
-	//progress(0.0)
 
+	if(subpage==undefined) { subpage=opts['subpage'] }
+	var view = subpage
+	clear_viz();
+	$.magnificPopup.close();
+	$('#status').html('')
+	$('#loading_msg').html('')
+	$('#loading_msg').show()
+	// $('#status').show()
+
+	$('#subpage').val(subpage)
+
+
+
+
+
+	_words = []
+	maxw=3
+	if(opts['words'].length > maxw) {
+		_words = opts['words'].slice(0,3)
+		// _words.push('...')
+		_words.push('et al')
+		// _words[2] = _words[2]+'...'
+	} else {
+		_words = opts['words']
+	}
+	// _wordstr='“'+_words.join(',” “')+'”'
+	// _wordstr=_wordstr.replace('“et al”','et al')
+	_wordstr='‘'+_words.join('’, ‘')+'’'
+	_wordstr=_wordstr.replace('‘et al’','et al')
+	
+
+	console.log('>> analyze_word',opts,subpage)
+	// bar.animate(0.25)
+	opts['progress_range']=[0.0,1.0]
+	
+	if (view==undefined) { var view=get_cmd(); }
+
+	// all_periods = use_all_periods()
+	//console.log('view',view)
+	// console.log('all_periods',all_periods)
+
+	$('.method_link').removeClass('method_link_enabled')
+	$('.method_link').attr('class','method_link_disabled method_link')
+	
+	if (view == "ranks") {
+		// $('#period').val('')
+		$('#link_ranks').removeClass('method_link_disabled')
+		$('#link_ranks').attr('class','method_link_enabled method_link')
+		get_ranks(word,popup=false);
+
+	
+	} else if (view == "custom") {
+		$('#period').val('')
+		$('#link_custom').removeClass('method_link_disabled')
+		$('#link_custom').attr('class','method_link_enabled method_link')
+		custom_spaces(word,all_periods=all_periods);
+
+	
+	} else if (view == "simnet") {
+		$('#progressbar').show()
+		status('loading semantic network for words: '+opts['words'].join(', '))
+
+		$('#link_simnet').removeClass('method_link_disabled')
+		$('#link_simnet').attr('class','method_link_enabled method_link')
+		console.log("OPTS>>",opts)
+
+
+		if (_wordstr.includes('>') & opts['words'].length==1) {
+			_onlyword=opts['words'][0]
+			id1=_onlyword.split('>')[0]
+			id2=_onlyword.split('>')[1]
+			w1=id1.split('_')[0]
+			w2=id2.split('_')[0]
+			p1=id1.split('_')[1]
+			p2=id2.split('_')[1]
+			if(p1==undefined) { p1=opts['periods'][0] }
+			if(p2==undefined) { p2=opts['periods'][0] }
+			p1nice=period2nice(p1,opts)
+			p2nice=period2nice(p2,opts)
+			c1=period2color(p1,opts)
+			c2=period2color(p2,opts)
+			cpath=COLORS[COLORS.length-1]
+			// w1color=`<span style="color:${c1}">${w1}</span>`
+			// w2color=`<span style="color:${c2}">${w2}</span>`
+			// p1color=`<span style="color:${c1}">${p1nice}</span>`
+			// p2color=`<span style="color:${c1}">${p2nice}</span>`
+
+			//title = 'Semantic Path of '+_wordstr.replace('>','’ ⟶ ‘') // from ${w1} to ${w2}`
+			// title=title.split('‘').join('<b>').split('’').join('</b>')
+			// title = `Semantic Path of ${w1color} to ${w2color}`
+			title = `Semantic Path: from <b>${w1}</b> to <b>${w2}</b>`
+
+			subtitle = `Network showing the <span style="color:${cpath}">shortest path</span> from <span style="color:${c1}"><b>${w1}</b> <small>(${p1nice})</small></span> to <span style="color:${c2}"><b>${w2}</b> <small>(${p2nice})</small></span>`
+			// subtitle = `Network showing the shortest path from ${w1color} (${p1color}) to ${w2color} (${p2color})`
+			//subtitle = `Network showing the shortest path from ${w1} (${p1nice}) to ${w2} (${p2nice})`
+			// each word to its '+opts['n_top']+' nearest words in the model'	
+		} else {
+			title = 'Semantic Network of '+_wordstr
+			subtitle = 'Network connecting each word to its '+opts['n_top']+' nearest words in the model'	
+		}
 		
+		
+		$('#fig_title').html(title)
+		$('#fig_subtitle').html(subtitle)
+		make_caption()
+		make_footer()
+
+
+
+		// opts['progress_range']=[0.25,0.9]
+		// progress(0.33)
+		// opts['progress_range']=[0,1.0]
+		socket.emit('mostsimnet', opts)
+
+	} else if (view=='expand') {
+		// log('expanding words...',opts)
+		socket.emit('expandwords',get_opts())
+
+	} else if (view=='umap') {
+		$('#link_umap').removeClass('method_link_disabled')
+		$('#link_umap').attr('class','method_link_enabled method_link')
+
+		title = 'Semantic Map of '+_wordstr
+		subtitle = 'UMAP dimensionality reduction on their vector positions'
+		$('#fig_title').html(title)
+		$('#fig_subtitle').html(subtitle)
+		make_caption()
+
+		status('Progress...')
+		log('umapping words...')
+
+		socket.emit('get_umap',opts)
 	
+	} else {
+		// spaces
+		$('#link_spaces').removeClass('method_link_disabled')
+		$('#link_spaces').attr('class','method_link_enabled method_link')
+		get_spaces(word,all_periods=all_periods)
+	}
 
-	var log = function(x) { console.log(x); status('(browser) '+x) }
+	//bar.animate(0.25)
 
+	// cache_vars();
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// MAIN
+
+
+	// add periods
 	reset_periods()
 
+	// immediately store variables in page that were reached via the url
+	enact_options_in_url()
 
-	function make_caption() {
-		opts=get_opts()
-		model_dat=get_model_dat()
-		html='Corpus: '+model_dat['corpus_desc']
-		html+='<br/>'
-		html+='Period'
+	// set up logger
+	var log = function(x) { console.log(x); status('(browser) '+x) }
 
-		// get nice period
-
-		if(opts['periods'].length>1) { html+='s'}
-		// html+=' shown here:'
-		html+=' (n='+opts['periods'].length+'): '
-		opts['periods'].forEach(function(p,_i) { 
-			//html+=' '+p 
-			pi = model_dat['periods'].indexOf(p)
-			pnice=model_dat['periods_nice'][pi]
-			color=COLORS[pi]
-			pnice_html = '<span style="color:'+color+'">'+pnice+'</span>'
-			if(_i>0) { html+=',' }
-			html+=' '+pnice_html
-		})
-
-
-		//
-		wordstr=opts['words'].slice(0,50).join(', ')
-		wordstr=wordstr.replace('>','⟶')
-		html+='<br/>Words (n='+opts['words'].length+'): '+wordstr
-
-		$('#caption').html(html)
-	}
-
-
-	function make_footer() {
-		title=$('#fig_title').html()
-		footer=''
-		if(title) {
-			footer+='“'+title+'”. '
-		}
-
-		footer+='Cambridge Keydata Project, 2020, '
-		footer+='<a href="'+url+'" target="_blank">'+url+'</a>.'
-
-		var dateObj = new Date();
-		// var month = dateObj.getUTCMonth() + 1; //months from 1-12
-		var day = dateObj.getUTCDate();
-		var year = dateObj.getUTCFullYear();
-		var monthNames = ["January", "February", "March", "April", "May","June","July", "August", "September", "October", "November","December"];
-		var month = monthNames[dateObj.getUTCMonth()]
-
-		newdate = day+' '+ month + ' ' + year
-
-		footer+=' Accessed '+newdate+'.'
-
-		$('#footer').html(footer)
-		return footer
-	}
-
-
-	function get_opts() {
-		mdat=get_model_dat()
-		opts={}
-		opts['words']=split_words($('#analyze_word').val().replace('⟶','>'))
-		opts['n_top']=$('#n_top').val();
-		opts['expand_n']=$('#expand_n').val();
-		opts['model_id']=get_model_id()
-		opts['combine_periods']=$('input[name="combined_periods_by"]:checked').val()
-		for(var mk in mdat) {
-			opts['model_'+mk]=mdat[mk]
-		}
-		// opts['periods']=$(".period_input").val()
-		opts['periods']=[]
-		$('.period_input:input:checked').map(function(){opts['periods'].push($(this).val()) })
-
-		opts['subpage']=get_subpage()
-		// console.log('!opts!',opts)
-		return opts
-	}
-
-
-	function get_self_url(opts=undefined) {
-		if(opts==undefined) { opts=get_opts() }
-
-		url_server='http://'+window.location.href.split('/')[2].replace(/\/+$/, "")
-
-		url = url_server
-		url+='?word=' + opts['words'].join(',')
-		url+='&view=' + opts['subpage']
-		url+='&periods=' + opts['periods'].join(',')
-		url+='&model_id=' + opts['model_id']
-		url+='&n_top='+opts['n_top']
-
-		return url
-	}
-
-	function period2nice(p,opts) {
-		pi = opts['model_periods'].indexOf(p)
-		pnice = opts['model_periods_nice'][pi]
-		return pnice
-	}
-
-	function period2color(p,opts,colors=COLORS) {
-		pi = opts['model_periods'].indexOf(p)
-		return colors[pi]
-	}
-	
-	function analyze_word(subpage='simnet') {
-		var opts=get_opts()
-		var url=get_self_url(opts)
-		console.log('URL??',url)
-		window.history.pushState({state: "dummyState"}, "Title", url);
-		
-		make_caption()
-		
-
-		// $( "#progressbar" ).progressbar({ value: 0.0 });
-		$( "#progressbar" ).progressbar({ value: false });
-
-
-
-
-		var view = subpage;
-		clear_viz();
-		$.magnificPopup.close();
-		$('#status').html('')
-		$('#loading_msg').html('')
-		$('#loading_msg').show()
-		// $('#status').show()
-
-		$('#subpage').val(subpage)
-
-		_words = []
-		maxw=3
-		if(opts['words'].length > maxw) {
-			_words = opts['words'].slice(0,3)
-			// _words.push('...')
-			_words.push('et al')
-			// _words[2] = _words[2]+'...'
-		} else {
-			_words = opts['words']
-		}
-		// _wordstr='“'+_words.join(',” “')+'”'
-		// _wordstr=_wordstr.replace('“et al”','et al')
-		_wordstr='‘'+_words.join('’, ‘')+'’'
-		_wordstr=_wordstr.replace('‘et al’','et al')
-		
-
-		console.log('>> analyze_word',opts,subpage)
-		// bar.animate(0.25)
-		opts['progress_range']=[0.0,1.0]
-		
-		if (view==undefined) { var view=get_cmd(); }
-
-		// all_periods = use_all_periods()
-		//console.log('view',view)
-		// console.log('all_periods',all_periods)
-
-		$('.method_link').removeClass('method_link_enabled')
-		$('.method_link').attr('class','method_link_disabled method_link')
-		
-		if (view == "ranks") {
-			$('#link_ranks').removeClass('method_link_disabled')
-			$('#link_ranks').attr('class','method_link_enabled method_link')
-			get_ranks(word,popup=false);
-
-		
-		} else if (view == "custom") {
-			$('#link_custom').removeClass('method_link_disabled')
-			$('#link_custom').attr('class','method_link_enabled method_link')
-			custom_spaces(word,all_periods=all_periods);
-
-		
-		} else if (view == "simnet") {
-			$('#progressbar').show()
-			status('loading semantic network for words: '+opts['words'].join(', '))
-
-			$('#link_simnet').removeClass('method_link_disabled')
-			$('#link_simnet').attr('class','method_link_enabled method_link')
-			console.log("OPTS>>",opts)
-
-
-			if (_wordstr.includes('>') & opts['words'].length==1) {
-				_onlyword=opts['words'][0]
-				id1=_onlyword.split('>')[0]
-				id2=_onlyword.split('>')[1]
-				w1=id1.split('_')[0]
-				w2=id2.split('_')[0]
-				p1=id1.split('_')[1]
-				p2=id2.split('_')[1]
-				if(p1==undefined) { p1=opts['periods'][0] }
-				if(p2==undefined) { p2=opts['periods'][0] }
-				p1nice=period2nice(p1,opts)
-				p2nice=period2nice(p2,opts)
-				c1=period2color(p1,opts)
-				c2=period2color(p2,opts)
-				cpath=COLORS[COLORS.length-1]
-				// w1color=`<span style="color:${c1}">${w1}</span>`
-				// w2color=`<span style="color:${c2}">${w2}</span>`
-				// p1color=`<span style="color:${c1}">${p1nice}</span>`
-				// p2color=`<span style="color:${c1}">${p2nice}</span>`
-
-				//title = 'Semantic Path of '+_wordstr.replace('>','’ ⟶ ‘') // from ${w1} to ${w2}`
-				// title=title.split('‘').join('<b>').split('’').join('</b>')
-				// title = `Semantic Path of ${w1color} to ${w2color}`
-				title = `Semantic Path: from <b>${w1}</b> to <b>${w2}</b>`
-
-				subtitle = `Network showing the <span style="color:${cpath}">shortest path</span> from <span style="color:${c1}"><b>${w1}</b> <small>(${p1nice})</small></span> to <span style="color:${c2}"><b>${w2}</b> <small>(${p2nice})</small></span>`
-				// subtitle = `Network showing the shortest path from ${w1color} (${p1color}) to ${w2color} (${p2color})`
-				//subtitle = `Network showing the shortest path from ${w1} (${p1nice}) to ${w2} (${p2nice})`
-				// each word to its '+opts['n_top']+' nearest words in the model'	
-			} else {
-				title = 'Semantic Compound of '+_wordstr
-				subtitle = 'Network connecting each word to its '+opts['n_top']+' nearest words in the model'	
-			}
-			
-			
-			$('#fig_title').html(title)
-			$('#fig_subtitle').html(subtitle)
-			make_caption()
-			make_footer()
-
-
-
-			// opts['progress_range']=[0.25,0.9]
-			// progress(0.33)
-			// opts['progress_range']=[0,1.0]
-			socket.emit('mostsimnet', opts)
-
-		} else if (view=='expand') {
-			// log('expanding words...',opts)
-			socket.emit('expandwords',get_opts())
-
-		} else if (view=='umap') {
-			$('#link_umap').removeClass('method_link_disabled')
-			$('#link_umap').attr('class','method_link_enabled method_link')
-
-			title = 'Semantic Map of '+_wordstr
-			subtitle = 'UMAP dimensionality reduction on their vector positions'
-			$('#fig_title').html(title)
-			$('#fig_subtitle').html(subtitle)
-			make_caption()
-
-			status('Progress...')
-			log('umapping words...')
-
-			socket.emit('get_umap',opts)
-		
-		} else {
-			// spaces
-			$('#link_spaces').removeClass('method_link_disabled')
-			$('#link_spaces').attr('class','method_link_enabled method_link')
-			get_spaces(word,all_periods=all_periods)
-		}
-
-		//bar.animate(0.25)
-
-		// cache_vars();
-	
-
-
-	}
+	// get connection
+	var socket = io();
 	
 	// SOCKET ROUTING
 	socket.on('status', function(data){  status(data); });
@@ -643,7 +742,7 @@ $(function () {
 	});
 
 	// FINALLY: ANALYZE WORD WITH CURRENT OPTIONS
-	analyze_word(subpage='simnet')
+	analyze_word()
 
 	// FINAL JQUERY BEFORE LOADING
 	// $('#analyze_word').val("{{DEFAULT_WORD_STR}}")

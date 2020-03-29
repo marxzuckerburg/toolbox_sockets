@@ -567,7 +567,7 @@ input { font-family:"Droid Sans"; margin:0; }
     /*margin-bottom:25px;*/
     margin-bottom:10px;
   }
-  #analyze_word_help { margin-bottom:25px; }
+  #analyze_word_help { margin-bottom:10px; }
   #analyze_word_help li { font-size:0.85em; }
 
 

@@ -4,7 +4,7 @@ import pandas as pd
 import db as DB
 from tqdm import tqdm
 from app_config import *
-from tinydb import Query
+#from tinydb import Query
 from graph_tool.all import *
 
 #  global variables for storage
@@ -345,6 +345,10 @@ class Embedding(object):
 		n_top=DEFAULT_N_TOP
 
 		if periods is None: periods=self.periods
+		if combine_periods in {'diachronic','average'}:
+			# deperiodize what we have so far
+			words=[deperiodize_str(w)[0] for w in words]
+
 		if combine_periods in {'simultaneous','diachronic'}:
 			words=periodize(words, periods, combine_periods=combine_periods)
 
@@ -408,10 +412,12 @@ class Embedding(object):
 			for w,wdf in df.groupby('word'):
 				word_df_mean = wdf.groupby(word_key).mean().reset_index()
 				word_df2=wdf.groupby(word_key).first().reset_index()
+				# was_ever_path = True in set(wdf.was_path)
 				lost_cols = list(set(word_df2.columns) - set(word_df_mean.columns))
 				word_df_mean = word_df_mean.merge(word_df2[lost_cols+[word_key]], on=word_key,how='left')
-				word_df_mean=word_df_mean[word_df.columns]
+				word_df_mean=word_df_mean[wdf.columns]
 				word_df_mean.sort_values('csim_rank',inplace=True)
+				word_df_mean['was_path']=False
 				
 				MSD+=word_df_mean.iloc[:n_top].to_dict('records')
 				
@@ -680,9 +686,11 @@ def average_periods(word_ld,word_key='word',period_key='period',periods=None):
 	if periods: word_df=word_df[word_df[period_key].isin(periods)]
 	word_df_mean = word_df.groupby(word_key).mean().reset_index()
 	word_df2=word_df.groupby(word_key).first().reset_index()
+	was_ever_path = True in set(wdf.was_path)
 	lost_cols = list(set(word_df2.columns) - set(word_df_mean.columns))
 	word_df_mean = word_df_mean.merge(word_df2[lost_cols+[word_key]], on=word_key,how='left')
 	word_df_mean=word_df_mean[word_df.columns]
+	word_df_mean['was_path']=was_ever_path
 
 	print('AVGS:\n',word_df_mean.shape,'\n',word_df_mean.sort_values('csim_rank'))
 
