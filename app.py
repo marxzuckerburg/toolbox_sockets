@@ -76,11 +76,15 @@ def mostsimnet(opts):
 	networks_data = sims2net(most_similar_data,combine_periods=opts['combine_periods'])
 
 	emit(msg+'_resp', {'data':networks_data})
-		
-
-
+	
 
 
 if __name__ == '__main__':
 	# app.run(debug=True)
-	socketio.run(app, debug=True, port=1799,host='0.0.0.0')
+	import sys
+	print(sys.argv)
+	port=1799
+	if len(sys.argv)>1:
+		port=int(sys.argv[-1])
+	print(f' * Starting server on port: {port}')
+	socketio.run(app, debug=True, port=port,host='0.0.0.0')
