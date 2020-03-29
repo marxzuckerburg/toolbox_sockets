@@ -86,5 +86,5 @@ if __name__ == '__main__':
 	port=1799
 	if len(sys.argv)>1:
 		port=int(sys.argv[-1])
-	print(f' * Starting server on port: {port}')
+	print(' * Starting server on port',port)
 	socketio.run(app, debug=True, port=port,host='0.0.0.0')
