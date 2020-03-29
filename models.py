@@ -4,7 +4,6 @@ import pandas as pd
 import db as DB
 from tqdm import tqdm
 from app_config import *
-#from tinydb import Query
 from graph_tool.all import *
 
 #  global variables for storage
@@ -215,18 +214,6 @@ class Embedding(object):
 		all_words=[]
 		all_vecs=[]
 		
-		# mongo
-		#for d in tqdm(self.db.find().batch_size(1000),total=self.db.count()):
-		#for d in self.db.find().batch_size(100):
-		
-		# tinydb
-		# for d in self.db.all():
-		# 	try:
-		# 		all_words.append(d['word'])
-		# 		all_vecs.append(d['vecs'])
-		# 	except:
-		# 		pass
-
 		# just use gensim
 		all_words=list(self.gensim.vocab)
 		all_vecs=self.gensim.vectors

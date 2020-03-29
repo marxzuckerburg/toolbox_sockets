@@ -1,7 +1,6 @@
 from graph_tool.all import *
 
 from app_config import *
-from tinydb import TinyDB
 import os
 
 M2VDB = {}
@@ -50,6 +49,7 @@ def get_distdb_cog(model_id):
 
 
 def get_vecdb_tinydb(model_id):
+	from tinydb import TinyDB
 	if not model_id in M2VDB:
 		dbdir=os.path.join(DB_DIR,model_id)
 		dbfn=os.path.join(dbdir,DB_NAMESPACE_VECS+'.json')
@@ -59,6 +59,7 @@ def get_vecdb_tinydb(model_id):
 
 
 def get_distdb_tinydb(model_id):
+	from tinydb import TinyDB
 	if not model_id in M2DDB:
 		dbdir=os.path.join(DB_DIR,model_id)
 		dbfn=os.path.join(DB_DIR,model_id,DB_NAMESPACE_DISTS+'.json')
