@@ -30,6 +30,17 @@ function draw_net(data) {
 }
 
 
+function period2nice(p,opts) {
+	pi = opts['model_periods'].indexOf(p)
+	pnice = opts['model_periods_nice'][pi]
+	return pnice
+}
+
+function period2color(p,opts,colors=COLORS) {
+pi = opts['model_periods'].indexOf(p)
+return colors[pi]
+}
+
 
 
 function draw_nets(data, opts={}, div_id='networks', div_net_id='net_canvas', div_net_class='net_div') {
@@ -44,15 +55,22 @@ function draw_nets(data, opts={}, div_id='networks', div_net_id='net_canvas', di
 		net=netd['netdata']
 
 		// console.log('NET:',i,net)
+		
 
-		if(data.length>1) { nettitle='<h3>Network: '+period+'</h3>' } else { nettitle='' }
-		nettitle=''
+		if(data.length>1) { 
+			nettitle='<center><div id="period_title_above_graph">'
+			nettitle+='<a href="javascript:void(0)" onclick="netprev()">⟵</a> '
+			nettitle+=period2nice(period,opts)
+			nettitle+=' <a href="javascript:void(0)" onclick="netnext()">⟶</a></center>'
+
+		} else { nettitle='' }
+		// nettitle=''
 		periods.push(period)
 		if(nettitle!='') { net_titles.push(nettitle) }
 
 		this_net_div_id  = div_net_id + (i+1)
 		div_ids.push(this_net_div_id)
-
+		
 		
 		// newdivhtml='<div id="'+this_net_div_id+'" class="'+div_net_class+'"><h3>Network: '+period+'</h3> '+nettitle+'</div>'
 		newdivhtml='<div id="'+this_net_div_id+'" class="'+div_net_class+'">'+nettitle+'</div>'
@@ -66,15 +84,26 @@ function draw_nets(data, opts={}, div_id='networks', div_net_id='net_canvas', di
 	if(data.length>1) { 
 		meta_title = []
 		periods.forEach(function(p,i) {
+			pnice=opts['model_periods_nice'][i]
 			pdiv = div_ids[i]
-			pstr='<a href="javascript:void" onclick="netswitch(\''+pdiv+'\')">'+p+'</a>'
+			pstr='<a href="javascript:void(0)" onclick="netswitch(\''+pdiv+'\')">'+pnice+'</a>'
 			meta_title.push(pstr)
 		})
 		meta_title=meta_title.join(' | ')
-		$('#'+div_id).prepend('<h3>Periods: '+meta_title+'</h3>')
+		meta_sub='<a href="javascript:void(0)" onclick="netprev()">⇦</a>'
+		meta_sub+='|<a href="javascript:void(0)" onclick="netnext()">⇨</a> '
+
+		periodhtml='Diachronic networks: '
+		// periodhtml+=meta_sub
+		periodhtml+=meta_title
+		// periodhtml+='<br/>'
+		// periodhtml+=' <small>['
+		
+		// periodhtml+=']</small>'
+
+		$('#'+div_id).prepend('<div id="period_links_above_graph">'+periodhtml+'</div>')
 	}
 }
-
 
 function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	var canvas_id=div_id+'_canvas'
@@ -92,7 +121,7 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 
 	id2node={}
 	periods_sofar=new Set()
-	period2color={}
+	
 
 	data.nodes.sort(function(d1,d2) { 
 		p1=d1.id.split('_')[1]
@@ -111,21 +140,16 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	  // node_d['id'][0].toUpperCase() + node_d['id'].slice(1)
 	  // node_d['period']=node_d['label'].split('_')[1]
 	  period = node_d['period']
-
-	  if(!(period in period2color) & (period!=undefined)) { period2color[period] = COLORS[Object.keys(period2color).length] }
-
-	  periods_sofar.add(node_d['period'])
+	  periods_sofar.add(period)
 	  node_d['font']=font_default
 	  node_d['color']='black'
 
-	  console.log('node_d!!',periods_sofar,periods_sofar.size,node_d)
-
-	  if((node_d['period']!=undefined) & (periods_sofar.size>1)) {
+	  if((period!=undefined)) { // & (periods_sofar.size>1)) {
 	  	// if(!(node_d['period'] in period2color)) {
 	  	// 	period2color[node_d['period']] = period2color[node_d['period']]
 	  	// }
 	  	node_d['label']=node_d['label'].split('_')[0]
-	  	if (opts['combine_periods']!='average') { node_d['color'] = period2color[period] }
+	  	if (opts['combine_periods']!='average') { node_d['color'] = period2color(period,opts) }
 	  } else if (sources.includes(id)) {
 	  	// node_d['color'] = '#1B4F72'
 	  } else {
@@ -160,38 +184,6 @@ function draw_net_springy(data, div_id, opts={}, div_class='net_canvas') {
 	    }
 	  });
 
-	  $('#'+div_id).prepend('<svg id="net_legend" height="200" width="100"></svg>')
-	  // select the svg area
-		var svg = d3v5.select("net_legend")
-
-		// Handmade legend
-		svg.append("circle").attr("cx",200).attr("cy",130).attr("r", 6).style("fill", "#69b3a2")
-		svg.append("circle").attr("cx",200).attr("cy",160).attr("r", 6).style("fill", "#404080")
-		svg.append("text").attr("x", 220).attr("y", 130).text("variable A").style("font-size", "15px").attr("alignment-baseline","middle")
-		svg.append("text").attr("x", 220).attr("y", 160).text("variable B").style("font-size", "15px").attr("alignment-baseline","middle")
-
-
-	 //  // add legend   
-		// var svg = d3v4.select('#net_legend').append('svg').attr('width',100).attr('height',100)
-
-		// var legend = svg.append("g")
-		// .attr("class", "net_legend_svg")
-		// .attr("x", w - 65)
-		// .attr("y", 25)
-		// .attr("height", 100)
-		// .attr("width", 100)
-
-		// legend.selectAll('g').data(opts['model_periods'])
-		// .enter()
-		// .append('g')
-		// .each(function(d, i) {
-		// 	var g = d3v4.select(this)
-		// 	g.append("rect")
-		// 	.attr("x", w - 65)
-		// 	.attr("y", i*25)
-		// 	.attr("width", 10)
-		// 	.attr("height", 10)
-		// })
 	})
 }
 

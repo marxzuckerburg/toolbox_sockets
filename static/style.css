@@ -503,7 +503,8 @@ input { font-family:"Droid Sans"; margin:0; }
 #titles {
   margin-top: 6px;
   text-align:left;
-  margin-bottom:35px;
+  /*margin-bottom:35px;*/
+  margin-bottom:10px;
   
 }
 
@@ -563,8 +564,11 @@ input { font-family:"Droid Sans"; margin:0; }
   #analyze_word_button { width: 150px; height:35px; 
     /*margin-top:25px; margin-bottom:50px;*/
     /*margin-top:1em;margin-bottom:1em;*/
-    margin-bottom:25px;
+    /*margin-bottom:25px;*/
+    margin-bottom:10px;
   }
+  #analyze_word_help { margin-bottom:25px; }
+  #analyze_word_help li { font-size:0.85em; }
 
 
   #footer { 
@@ -594,3 +598,16 @@ max-width: 960px
 
 
 
+
+
+#period_links_above_graph {
+  font-size:1em;
+}
+
+#period_title_above_graph {
+  margin-top:10px;
+  font-size:1.2em;
+  margin-bottom:10px;
+}
+
+#period_title_above_graph a { text-decoration: none }

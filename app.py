@@ -71,9 +71,6 @@ def mostsimnet(opts):
 		n_top = DEFAULT_N_TOP
 
 	most_similar_data = model.get_most_similar(words=opts['words'],n_top=n_top,periods=opts['periods'],combine_periods=opts['combine_periods'])
-	#print('most_similar_data',most_similar_data)
-	for d in most_similar_data:
-		print('final msd',d)
 	
 	log('making network')
 	networks_data = sims2net(most_similar_data,combine_periods=opts['combine_periods'])

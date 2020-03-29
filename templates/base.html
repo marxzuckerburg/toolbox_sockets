@@ -71,10 +71,18 @@
   <br/>
 
   <h3>Analyze word(s)</h3> 
-  <textarea id="analyze_word" type="textbox" name="word">virtue_1800>value_1800
+  <textarea id="analyze_word" type="textbox" name="word">key_1800 > data_1950
 </textarea>
-<!-- <small><a href="javascript:void(0)" id="expand_words">Auto-add similar</a></small> -->
+
+
 <!-- 
+  key > data
+  virtue>value
+virtue_1800>value_1800
+
+  health,society,disease
+
+
 value
 values
 price
@@ -117,28 +125,84 @@ value-price
 value-importance -->
 
 
+
+
+
   <div id="button_row">
     <div style="float:left; font-size:0.8em"><a href="javascript:void(0)" id="expand_words">Auto-add similar</a></div>
 
     <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
   </div>
 
-  <!-- <br/> -->
-  <!-- <br/><br/> -->
+<div id="analyze_word_help">
+<h4>Examples</h4>
+<script>
+function eg1() {
+  $('#analyze_word').val('value')
+  $('#n_top').val('10')
+  $('#combine_periods__simultaneous').prop('checked',true)
+  $('#analyze_word_button').click()
+}
 
-   <!-- <center>
-      <button type="button" class='analyze_button' id='analyze_word_button'>Analyze</button>
-    </center>
-    <br/> -->
+function eg2() {
+  $('#analyze_word').val('value - price')
+  $('#n_top').val('10')
+  $('#combine_periods__simultaneous').prop('checked',true)
+  $('#analyze_word_button').click()
+}
+
+function eg3() {
+  $('#analyze_word').val('virtue > value')
+  $('#n_top').val('3')
+  $('#combine_periods__simultaneous').prop('checked',true)
+  $('#analyze_word_button').click()
+}
+
+function eg4() {
+  $('#analyze_word').val('value\nvalues\nprice\nimportance\nvalue-price\nvalue-importance')
+  $('#n_top').val('5')
+  $('#combine_periods__diachronic').prop('checked',true)
+  $('#analyze_word_button').click()
+}
+
+function eg5() {
+  $('#analyze_word').val('value\nvalues\nprice\nimportance\nvalue-price\nvalue-importance')
+  $('#n_top').val('5')
+  $('#combine_periods__simultaneous').prop('checked',true)
+  $('#analyze_word_button').click()
+}
+
+
+</script>
+
+<li><a href="javascript:void(0)" onclick="eg1()">value</a>: top 10 neighbors by period</li>
+<li><a href="javascript:void(0)" onclick="eg2()">value - price</a>: same, but for value minus price</li>
+<li><a href="javascript:void(0)" onclick="eg3()">virtue > value</a>: shortest path between them</li>
+<li>see clusters move as <a href="javascript:void(0)" onclick="eg4()">dicharonic networks</a></li>
+<li>or the "<a href="javascript:void(0)" onclick="eg5()">simultaneity of the nonsimultaneous</a>"</li>
+
+
+
+
+</div>
+
 
   <h3>Method</h3>
 
   <li><a href="javascript:void(0)" id='link_simnet' class='method_link'>Semantic Compounds</a></li>
-  <li><a href="javascript:void(0)" id='link_umap' class='method_link'>Semantic Maps</a></li>
-
+  
+  
+  <!-- <li><a href="javascript:void(0)" id='link_umap' class='method_link'>Semantic Maps</a></li>
   <li><a href="javascript:void(0)" id='link_ranks' class='method_link'>Changing Associations</a></li>
   <li><a href="javascript:void(0)" id='link_spaces' class='method_link'>Key Spaces</a></li>
-  <li><a href="javascript:void(0)" id='link_custom' class='method_link'>Semantic Dimensions</a></li>
+  <li><a href="javascript:void(0)" id='link_custom' class='method_link'>Semantic Dimensions</a></li> -->
+  
+  <div style="opacity:0.5">
+    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_umap' class='method_link'>Semantic Maps</a></li>
+    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_ranks' class='method_link'>Changing Associations</a></li>
+    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_spaces' class='method_link'>Key Spaces</a></li>
+    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_custom' class='method_link'>Semantic Dimensions</a></li>
+  </div>
 
   <!-- <hr/> -->
   <br/>
@@ -162,9 +226,9 @@ value-importance -->
 
     <br/>Periods shown:
     <div id="period_controls">
-        <input class="combine_periods_opt" type="radio" name="combined_periods_by" value="simultaneous" checked>Synchronic</input>
-        <br/><input class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic">Diachronic</input>
-        <br/><input class="combine_periods_opt" type="radio" name="combined_periods_by" value="average">Averaged</input>
+        <input id="combine_periods__simultaneous" class="combine_periods_opt" type="radio" name="combined_periods_by" value="simultaneous" checked>Synchronic</input>
+        <br/><input id="combine_periods__diachronic" class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic">Diachronic</input>
+        <br/><input id="combine_periods__average" class="combine_periods_opt" type="radio" name="combined_periods_by" value="average">Averaged</input>
     </div>
 
 
@@ -180,6 +244,7 @@ value-importance -->
     <!-- </center> -->
     
     <input type="hidden" id="subpage" value=""></input>
+    <input type="hidden" id="graph_div_being_used" value=""></input>
 
 </div>
 
@@ -243,7 +308,7 @@ value-importance -->
   // $(function() { $('#analyze_word').click(); });
 
 
-
+// $(function() { $('#analyze_word').val('data,work,culture,disease') })
 
 
 

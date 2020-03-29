@@ -8,14 +8,16 @@
 <div id="cmdbar_net" style="">
 
 	<h3>Network of similar* words</h3>
-	<li>Link to closest N neighbors:
+	<li>Link to closest
 		<select id='n_top'>
 			<option value='3'>3</option>
-			<option value='5' selected>5</option>
-			<option value='10'>10</option>
-			<option value='25'>25</option>
+			<option value='5'>5</option>
+			<option value='10' selected>10</option>
+			<!-- <option value='25'>25</option> -->
+			<option value='20'>20</option>
 			<option value=''>50</option>
 		</select>
+		neighbors:
 	</li>
 
 		<!-- <input type='textbox' id='n_top' value="5" style="width:2em;"></input></li> -->
@@ -254,9 +256,36 @@ function progress(n) {
 }
 
 function netswitch(div_id) { 
-
+	$('#graph_div_being_used').val(div_id)
 	$('.net_div').hide()
-	$('#'+div_id).show();
+	$('#'+div_id).show()
+}
+
+function netnext() { return netchange(change_by_adding=1) }
+function netprev() { return netchange(change_by_adding=-1) }
+
+function netchange(change_by_adding=1) {
+	// div_id=$('#graph_div_being_used').val()
+	div_used = $('.net_div:visible')[0]
+	console.log('div_used',div_used)
+
+	div_id=$(div_used).attr('id')
+	console.log('div_id',div_id)
+
+	div_num=parseInt(div_id.slice(-1))
+	console.log('div_num',div_num)
+
+	new_div_num=div_num+change_by_adding
+	console.log('new_div_num',new_div_num)
+
+	
+	new_div_id=div_id.slice(0,-1) + new_div_num.toString()
+	console.log('new_div_id',new_div_id)
+
+	if ( $( "#"+new_div_id ).length ) { 
+		$('#'+div_id).hide()
+		$('#'+new_div_id).show()
+	}
 }
 
 
@@ -472,6 +501,8 @@ $(function () {
 				w2=id2.split('_')[0]
 				p1=id1.split('_')[1]
 				p2=id2.split('_')[1]
+				if(p1==undefined) { p1=opts['periods'][0] }
+				if(p2==undefined) { p2=opts['periods'][0] }
 				p1nice=period2nice(p1,opts)
 				p2nice=period2nice(p2,opts)
 				c1=period2color(p1,opts)

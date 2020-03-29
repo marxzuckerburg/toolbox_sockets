@@ -60,7 +60,7 @@ DEFAULT_N_TOP = 50
 DB_NAME = 'keydata_toolbox'
 DB_URL = 'mongodb://localhost:27017'
 DB_NAMESPACE_VECS = 'vecs'
-DB_NAMESPACE_DISTS = 'distnet'
+DB_NAMESPACE_DISTS = 'distnets/distnet'
 DB_DIR = 'models/'
 
 

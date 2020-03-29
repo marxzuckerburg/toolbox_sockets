@@ -3,6 +3,7 @@ from app_config import *
 import time
 from collections import defaultdict
 import numpy as np,os
+import pandas as pd
 
 def ld2dld(ld,key):
 	dld=defaultdict(list)
@@ -13,13 +14,14 @@ def ld2dld(ld,key):
 def sims2net(most_similar_data,combine_periods=DEFAULT_COMBINED_PERIODS):
 	nets=[]
 
-	print('combine_periods -->',combine_periods)
+	# print('combine_periods -->',combine_periods)
 	
 	if combine_periods=='diachronic':
 		#print('msd by period!?',most_similar_data[0])
-		most_similar_data_by_period = ld2dld(most_similar_data,'period')
-		for period in most_similar_data_by_period:
-			period_data = most_similar_data_by_period[period]
+		df=pd.DataFrame(most_similar_data)
+		for pi,period in enumerate(sorted(list(set(df.period)))):
+			period_df=df[(df.period==period) & (df.period2==period)]
+			period_data = period_df.to_dict('records')
 			#print('period!!',period,period_data)
 			net = mostsim2netjson(period_data)
 			netd = {'period':period, 'netdata':net}
@@ -57,7 +59,7 @@ def mostsim2netjson(most_similar_data):
 				nodes_sofar.append(_word)
 				nodes.append(_node)
 			
-		print(word1,'--',csim,'-->',word2)
+		# print(word1,'--',csim,'-->',word2)
 		links.append({'source':word1, 'target':word2, 'weight':csim, 'was_path':data['was_path']})
 	return {'nodes':nodes, 'links':links}
 
@@ -84,20 +86,20 @@ class GraphToolDB(object):
 		self.edge_props=[]
 
 
-	def load_alts(self):
-		now=time.time()
-		print('loading alt graphs for: '+self.fn)
-		fndir=os.path.dirname(self.fn)
-		fnprefix=os.path.splitext(self.fn)[0]
-		for fn in os.listdir(fndir):
-			if fn.startswith('distnet.') and fn.endswith('.gt'):
-				fnfn=os.path.join(fndir,fn)
-				stamp = fn.split('.')[-2]
-				if stamp.startswith('n_top'):
-					n_top=int(stamp.split('=')[-1])
-					self.ntop2gt[n_top]=load_graph(fnfn,fmt='gt')
-		tdist=round(time.time()-now,2)
-		print('finished loading graph in %ss' % tdist)
+	# def load_alts(self):
+	# 	now=time.time()
+	# 	print('loading alt graphs for: '+self.fn)
+	# 	fndir=os.path.dirname(self.fn)
+	# 	fnprefix=os.path.splitext(self.fn)[0]
+	# 	for fn in os.listdir(fndir):
+	# 		if fn.startswith('distnet.') and fn.endswith('.gt'):
+	# 			fnfn=os.path.join(fndir,fn)
+	# 			stamp = fn.split('.')[-2]
+	# 			if stamp.startswith('n_top'):
+	# 				n_top=int(stamp.split('=')[-1])
+	# 				self.ntop2gt[n_top]=load_graph(fnfn,fmt='gt')
+	# 	tdist=round(time.time()-now,2)
+	# 	print('finished loading graph in %ss' % tdist)
 
 
 	def load(self):
@@ -117,7 +119,7 @@ class GraphToolDB(object):
 		# for a,b,d,e in self.edges():
 		# 	self.nn2d[a][b]=d
 
-		self.load_alts()
+		#self.load_alts()
 
 	def edges(self,data=True):
 		for e in self.gt.edges():
@@ -133,7 +135,7 @@ class GraphToolDB(object):
 	def neighbors(self,n):
 		return [self.v2n[v] for v in self.n2v[n].out_neighbors()]
 
-	def most_similar_data(self,n,n_top=10):
+	def most_similar_data(self,n,n_top=None):
 		if not n in self.n2v: return []
 		v1=self.n2v[n]
 		odat=[]
@@ -180,6 +182,9 @@ class GraphToolDB(object):
 		return gq
 
 	def filter_rank(self,max_rank=10):
+		# hack
+		if max_rank==50: return self.gt
+
 		if max_rank in self.ntop2gt:
 			return self.ntop2gt[max_rank]
 
@@ -206,3 +211,36 @@ if __name__ == '__main__':
 
 	for a,b,d in G.edges(data=True):
 		print(a,b,d)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"""
+most_similar_data_by_period = ld2dld(most_similar_data,'period')
+		for period in most_similar_data_by_period:
+			period_data = most_similar_data_by_period[period]
+			#print('period!!',period,period_data)
+			net = mostsim2netjson(period_data)
+			netd = {'period':period, 'netdata':net}
+			nets.append(netd)
+	else:
+		net = mostsim2netjson(most_similar_data)
+		netd = {'period':None, 'netdata':net}
+		nets.append(netd)
+
+	#print('NETSSS:',nets)
+
+	return nets
+
+"""
