@@ -100,7 +100,7 @@ function netchange(change_by_adding=1) {
 		urld.delete('period')
 		urld.set('period',period)
 		
-		new_search_url = urld.toString().split('%2C').join(',').split('%20').join('').split('%3E').join('>')
+		new_search_url = urld.toString().split('%2C').join(',').split('%20').join('').split('%3E').join('>').split('+').join('%2b')
 		console.log('new_search_url',new_search_url)
 
 		new_url = location.protocol + '//' + location.host + location.pathname + '?' + new_search_url
@@ -390,7 +390,7 @@ function make_footer() {
 function get_opts() {
 	mdat=get_model_dat()
 	opts={}
-	opts['words']=split_words($('#analyze_word').val().replace('⟶','>'))
+	opts['words']=split_words($('#analyze_word').val().replace('⟶','>').toLowerCase())
 	opts['n_top']=$('#n_top').val();
 	opts['expand_n']=$('#expand_n').val();
 	opts['model_id']=get_model_id()
@@ -426,6 +426,8 @@ function get_self_url(opts=undefined) {
 	url+='&temporality=' + opts['combine_periods']
 
 	if(opts['period']) { url+='&period='+opts['period'] }
+
+	url=url.split('+').join('%2b')
 
 	return url
 }

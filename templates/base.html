@@ -172,14 +172,23 @@ function eg5() {
   $('#analyze_word_button').click()
 }
 
+function eg6() {
+  $('#analyze_word').val('King+(Woman-Man)')
+  $('#n_top').val('3')
+  $('#combine_periods__simultaneous').prop('checked',true)
+  $('#analyze_word_button').click()
+}
+
 
 </script>
 
 <li><a href="javascript:void(0)" onclick="eg1()">value</a>: top 10 neighbors by period</li>
-<li><a href="javascript:void(0)" onclick="eg2()">value - price</a>: same, but for value minus price</li>
-<li><a href="javascript:void(0)" onclick="eg3()">virtue > value</a>: shortest path between them</li>
+<li><a href="javascript:void(0)" onclick="eg2()">value - price</a>: associations of A without B</li>
+<li>semantic math: <a href="javascript:void(0)" onclick="eg6()">King+(Woman-Man) = Queen</a></li>
+<li><a href="javascript:void(0)" onclick="eg3()">virtue > value</a>: shortest path from A to B</li>
 <li>see clusters move as <a href="javascript:void(0)" onclick="eg4()">dicharonic networks</a></li>
 <li>or the "<a href="javascript:void(0)" onclick="eg5()">simultaneity of the nonsimultaneous</a>"</li>
+
 
 
 
@@ -239,9 +248,9 @@ function eg5() {
 
         <input id="combine_periods__diachronic" class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic">Diachronic</input>
 
-        <!-- <br/> -->
+<!--         <br/>
 
-        <!-- <input id="combine_periods__average" class="combine_periods_opt" type="radio" name="combined_periods_by" value="average">Synchronic</input> -->
+        <input id="combine_periods__average" class="combine_periods_opt" type="radio" name="combined_periods_by" value="average">Synchronic</input> -->
     </div>
 
 
