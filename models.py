@@ -5,6 +5,7 @@ import db as DB
 from tqdm import tqdm
 from app_config import *
 from graph_tool.all import *
+import gzip
 
 #  global variables for storage
 fn2M = {}
@@ -17,12 +18,13 @@ fn2distnet={}
 
 class Embedding(object): 
 
-	def __init__(self,id,fn,periods=[]):
+	def __init__(self,id,fn,periods=[],fn_vocab=None):
 		self.fn = fn
 		self.periods=periods
 		self.id=id
 		self.log=lambda x: print(x+'\n') #logging.info
 		self.progress=logging.info
+		self.fn_vocab = fn_vocab if fn_vocab else self.fn.replace('.txt.gz','.vocab.txt')
 
 
 	## Three methods of storage/calculation
@@ -41,9 +43,11 @@ class Embedding(object):
 			self.log('generating model from vectors stored on disk: '+self.fn)
 			all_words=[]
 			all_vecs=[]
-			with open(self.fn) as f:
+			#with open(self.fn) as f:
+			with (gzip.open(self.fn) if self.fn.endswith('.gz') else open(self.fn)) as f:
 				for i,ln in enumerate(f):
 					if not i: continue
+					ln=ln.decode('utf-8') if self.fn.endswith('.gz') else ln
 					lndat=ln.strip().split()
 					all_words.append(lndat[0])
 					all_vecs.append([float(x) for x in lndat[1:]])
@@ -55,6 +59,17 @@ class Embedding(object):
 			tdist=round(time.time()-now,1)
 			self.log('done loading model in %ss' % tdist)
 		return self._gensim
+
+	@property
+	def vocab(self):
+		if not hasattr(self,'_vocab'):
+			self._vocab=voc={}
+			with open(self.fn_vocab) as f:
+				for ln in f:
+					if not ln: continue
+					word,count = ln.strip().split()
+					voc[word]=int(count)
+		return self._vocab
 
 	## 2) VecDB
 	@property
@@ -91,7 +106,9 @@ class Embedding(object):
 	def build_distmatrix(self,n_top=DEFAULT_N_TOP,n_vecs=MAX_NUM_VECS_TO_STORE):
 		self.log('BUILDING DISTANCE DATABASE')
 		
-		all_words,all_vecs=self.get_all_word_vecs()
+		all_words,all_vecs=self.get_all_word_vecs(only_pos={'n','v','j'})
+		print(len(all_words),len(all_vecs))
+		print('ALL WORDS:',all_words[:1000])
 		vecsM = np.array(all_vecs[:n_vecs])
 		vocab=all_words[:n_vecs]
 		print('vecs shape',vecsM.shape)
@@ -210,13 +227,27 @@ class Embedding(object):
 		if vecname in self.gensim.vocab: return self.gensim[vecname]
 		return None
 
-	def get_all_word_vecs(self):
+	def get_all_word_vecs(self,only_pos={}):
 		all_words=[]
 		all_vecs=[]
+
+		if only_pos:
+			import llp
+			pos_d=llp.get_word2pos()
+			print(pos_d.get('hello'))
 		
 		# just use gensim
 		all_words=list(self.gensim.vocab)
 		all_vecs=self.gensim.vectors
+		#print(all_words[:100])
+
+		word_vecs=[(w,all_vecs[i]) for i,w in enumerate(all_words) if not only_pos or pos_d.get(w.split('_')[0],' ')[0] in only_pos]
+		#print(word_vecs[:1000])
+
+		# sort?
+		word_vecs.sort(key=lambda lt: -self.vocab[lt[0]])
+
+		all_words,all_vecs = zip(*word_vecs)
 
 		return(all_words,all_vecs)
 
@@ -760,18 +791,43 @@ def average_periods(word_ld,word_key='word',period_key='period',periods=None):
 
 
 
-
+# W2V_MODELS = {
+# 	'COHA_byhalfcentury_nonf': {
+# 		"fn": "/Users/ryan/DH/keydata/data/db/models/COHA_byhalfcentury_nonf/chained_full_combined/1800-2000.min=100.run=01.txt",
+# 		'periods':['1800','1850','1900','1950'],
+# 		'periods_nice':['1800-1850','1850-1900','1900-1950','1950-2000'],
+# 		"corpus_desc":"COHA (Corpus of Historical American English), Non-Fiction"
+# 	},
 
 
 
 
 
 if __name__=='__main__':
-	pass
+	import sys
+	if len(sys.argv)>1:
+		model_id = sys.argv[1]
+		fn=W2V_MODELS[model_id]['fn']
+		periods=W2V_MODELS[model_id]['periods']
 
-	e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
-	#e.build_vecdb()
-	#e.build_distmatrix()
+		e=Embedding(model_id,fn,periods)
+	else:
+		e = Embedding(DEFAULT_W2V_MODEL,DEFAULT_W2V_FN,DEFAULT_PERIODS)
+	
+
+
+	# if len(sys.argv)>2:
+	# 	cmd=sys.argv[2]
+	# else:
+	# 	cmd='vecdb'
+
+
+	# if cmd=='vecdb': 
+	# 	e.build_vecdb()
+	# elif cmd=='distdb':
+	# 	e.build_distdb()
+	# elif cmd=='all':
+	# 	e.build_vecdb()
 	e.build_distdb()
 
 
