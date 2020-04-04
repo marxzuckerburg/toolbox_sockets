@@ -159,6 +159,7 @@ class Embedding(object):
 
 				## NETDB
 				g=Graph()
+				g.set_directed(False)
 				# add props
 				#vprop_d = g.new_vertex_property('object')
 				#eprop_d = g.new_edge_property('object')
