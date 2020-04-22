@@ -8,6 +8,7 @@ from app_config import *
 from networks import *
 from models import *
 from db import *
+from freqs import *
 
 # set up app
 app = Flask(__name__)
@@ -76,6 +77,31 @@ def mostsimnet(opts):
 	networks_data = sims2net(most_similar_data,combine_periods=opts['combine_periods'])
 
 	emit(msg+'_resp', {'data':networks_data})
+
+
+@socketio.on('get_freqs')
+def get_freqs(opts):
+	msg='get_freqs'
+	log('starting '+msg+'()')
+	print(msg+'_opts: ',opts)
+
+	words=deperiodize_l(opts['words'])
+	log('getting freqs for %s' % ', '.join(words))
+
+	#hdf_fn = W2V_MODELS[opts['model_id']]['fn_freqs']
+	#log('using hdf data stored in: '+hdf_fn)
+	model_opts = W2V_MODELS[opts['model_id']]
+
+	DATA=[]
+	for word in words:
+		df_freqs = get_df_freqs(word, model_opts)
+		print('get_freqs received:', df_freqs)
+		if df_freqs is None: continue
+		data_ld = df_freqs.to_dict('records')
+		DATA+=[(word,data_ld)]
+
+	emit(msg+'_resp', DATA)
+
 	
 
 

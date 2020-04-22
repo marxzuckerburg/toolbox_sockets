@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 
+{% include "word_freq.html" %}
+
 
 
 {%block cmdbar %}
@@ -48,10 +50,73 @@
 	<div id="umap"></div>
 	<div id="cy"></div>
 	<div id="net_view"><div id="net_container"><div id="net_chart"></div></div></div>
+	<div id="linegraph"></div>
 <!-- </center> -->
 
 
 <script>
+
+
+
+function linegraph_switch(div_id) { 
+	$('#graph_div_being_used').val(div_id)
+	$('.linegraph').hide()
+	$('#'+div_id).show()
+}
+
+function linegraph_next() { return linegraph_change(change_by_adding=1) }
+function linegraph_prev() { return linegraph_change(change_by_adding=-1) }
+
+function linegraph_change(change_by_adding=1) {
+	// div_id=$('#graph_div_being_used').val()
+	div_used = $('.linegraph:visible')[0]
+	console.log('div_used',div_used)
+
+	div_id=$(div_used).attr('id')
+	console.log('div_id classes??',div_id)
+
+	div_num=parseInt(div_id.slice(-1))
+	console.log('div_num',div_num)
+
+	new_div_num=div_num+change_by_adding
+	console.log('new_div_num',new_div_num)
+
+	
+	new_div_id=div_id.slice(0,-1) + new_div_num.toString()
+	console.log('new_div_id',new_div_id)
+
+	if ( $( "#"+new_div_id ).length ) { 
+		$('#'+div_id).hide()
+		$('#'+new_div_id).show()
+		$('#graph_div_being_used').val(new_div_id)
+
+
+		// period=$('#'+new_div_id + ' #period_title_above_graph').text().trim().split(' ')[1].split('-')[0]
+		// console.log('get_period',period)
+		// $('#period').val(period)
+
+		// // update_url()
+		// // url=get_self_url(opts)
+		// var urld = new URLSearchParams(window.location.search)
+		// // if(urld.has('period')) { urld.delete('period') }
+		// console.log('period!?',period)
+		// console.log(urld.get('period'))
+		// urld.delete('period')
+		// urld.set('period',period)
+		
+		// new_search_url = urld.toString().split('%2C').join(',').split('%20').join('').split('%3E').join('>').split('+').join('%2b')
+		// console.log('new_search_url',new_search_url)
+
+		// new_url = location.protocol + '//' + location.host + location.pathname + '?' + new_search_url
+
+		// window.history.pushState({state: "dummyState"}, "Title", new_url)
+
+		// $('#url_citation').html('<a href="'+new_url+'" target="_blank">'+new_url+'</a>')
+
+		// make_footer()
+	}
+}
+
 
 
 function netswitch(div_id) { 
@@ -148,6 +213,8 @@ function clear_viz() {
 	$("#data_view").html("");
 	$('#linegraph_spaces').html("");
 	$('#linegraph').html("");
+	$('.linegraph').html("");
+	$('#linegraph').hide()
 	$('#slopegraph').html("");
 	$('#spaces_custom_viz').html("");
 	$('#umap').html("")
@@ -469,6 +536,11 @@ function period2color(p,opts,colors=COLORS) {
 }
 
 
+
+
+
+
+
 function analyze_word(subpage=undefined) {
 	var opts=get_opts()
 	if(opts['combine_periods']!='diachronic') { 
@@ -544,6 +616,15 @@ function analyze_word(subpage=undefined) {
 		$('#link_custom').attr('class','method_link_enabled method_link')
 		custom_spaces(word,all_periods=all_periods);
 
+	} else if (view == "freqs") {
+		$('#link_freqs').removeClass('method_link_disabled')
+		$('#link_freqs').attr('class','method_link_enabled method_link')
+
+		$('#fig_title').html('Frequency graph...')
+		socket.emit('get_freqs',get_opts())
+
+
+		
 	
 	} else if (view == "simnet") {
 		$('#progressbar').show()
@@ -577,7 +658,7 @@ function analyze_word(subpage=undefined) {
 			//title = 'Semantic Path of '+_wordstr.replace('>','’ ⟶ ‘') // from ${w1} to ${w2}`
 			// title=title.split('‘').join('<b>').split('’').join('</b>')
 			// title = `Semantic Path of ${w1color} to ${w2color}`
-			title = `Semantic Path: from <b>${w1}</b> to <b>${w2}</b>`
+			title = `Semantic Path from <b>${w1}</b> to <b>${w2}</b>`
 
 			subtitle = `Network showing the <span style="color:${cpath}">shortest path</span> from <span style="color:${c1}"><b>${w1}</b> <small>(${p1nice})</small></span> to <span style="color:${c2}"><b>${w2}</b> <small>(${p2nice})</small></span>`
 			// subtitle = `Network showing the shortest path from ${w1color} (${p1color}) to ${w2color} (${p2color})`
@@ -717,6 +798,28 @@ function analyze_word(subpage=undefined) {
 		//init_selectize()
 	});
 
+	socket.on('get_freqs_resp', function(data) {
+		
+		log('received freqs data')
+		console.log('DATA :: ',data)
+
+		words = []
+		data.forEach(function(d) {  words.push(d[0]) })
+		wordstr="‘"+words.slice(0,3).join('’, ‘')+"’"
+		if(words.length>3) { wordstr+=', et al' }
+
+		$('#fig_title').html('Frequency graph of '+wordstr)
+
+
+		
+		log('drawing graphs')
+		make_linegraphs(data)
+
+		$('#progressbar').hide()
+		$('#loading_msg').hide()
+
+	});
+
 
 	// SHOW MOST SIMILAR
 	socket.on('mostsim_resp', function(data){
@@ -753,6 +856,7 @@ function analyze_word(subpage=undefined) {
 	$('#link_expand').click(function() { analyze_word(subpage='expand') })
 	// $('#link_umap').click(function() { analyze_word(subpage='umap') })
 	$('#link_simnet').click(function() { analyze_word(subpage='simnet') })
+	$('#link_freqs').click(function() { analyze_word(subpage='freqs') })
 	// $('#link_spaces').click(function() { analyze_word(subpage='spaces') })
 	// $('#link_custom').click(function() { analyze_word(subpage='custom') })
 	// $('#link_ranks').click(function() { analyze_word(subpage='ranks') })

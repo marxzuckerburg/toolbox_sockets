@@ -72,7 +72,7 @@
   <br/>
 
   <h3>Analyze word(s)</h3> 
-  <textarea id="analyze_word" type="textbox" name="word">disease_1700>society_1775
+  <textarea id="analyze_word" type="textbox" name="word">sickness>society
 </textarea>
 
 
@@ -200,25 +200,23 @@ function eg6() {
 
 
   
-  <div style="opacity:0.5; display:none">
+  <div>
     <h3>Method</h3>
-
-  <li><a href="javascript:void(0)" id='link_simnet' class='method_link'>Semantic Networks</a></li>
+      <li><a href="javascript:void(0)" id='link_simnet' class='method_link'>Semantic Networks</a></li>
+      <li><a href="javascript:void(0)" id='link_freqs' class='method_link'>Word Frequency</a></li>
   
-  
-  
-  <!-- <li><a href="javascript:void(0)" id='link_umap' class='method_link'>Semantic Maps</a></li>
-  <li><a href="javascript:void(0)" id='link_ranks' class='method_link'>Changing Associations</a></li>
-  <li><a href="javascript:void(0)" id='link_spaces' class='method_link'>Key Spaces</a></li>
-  <li><a href="javascript:void(0)" id='link_custom' class='method_link'>Semantic Dimensions</a></li> -->
+    <!-- <li><a href="javascript:void(0)" id='link_umap' class='method_link'>Semantic Maps</a></li>
+    <li><a href="javascript:void(0)" id='link_ranks' class='method_link'>Changing Associations</a></li>
+    <li><a href="javascript:void(0)" id='link_spaces' class='method_link'>Key Spaces</a></li>
+    <li><a href="javascript:void(0)" id='link_custom' class='method_link'>Semantic Dimensions</a></li> -->
 
 
 
 
-    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_umap' class='method_link'>Semantic Maps</a></li>
+    <!-- <li><a target="_blank" href="http://cambridgekeydata.org" id='link_umap' class='method_link'>Semantic Maps</a></li>
     <li><a target="_blank" href="http://cambridgekeydata.org" id='link_ranks' class='method_link'>Changing Associations</a></li>
     <li><a target="_blank" href="http://cambridgekeydata.org" id='link_spaces' class='method_link'>Key Spaces</a></li>
-    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_custom' class='method_link'>Semantic Dimensions</a></li>
+    <li><a target="_blank" href="http://cambridgekeydata.org" id='link_custom' class='method_link'>Semantic Dimensions</a></li> -->
   </div>
 
   <!-- <hr/> -->
@@ -246,11 +244,14 @@ function eg6() {
     <br/>Temporal mode:
     <div id="period_controls">
 
-        <input id="combine_periods__simultaneous" class="combine_periods_opt" type="radio" name="combined_periods_by" value="simultaneous" checked>Simultaneous</input>
-
+        
+        <input id="combine_periods__diachronic" class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic" checked>Diachronic</input>
+        
         <br/>
 
-        <input id="combine_periods__diachronic" class="combine_periods_opt" type="radio" name="combined_periods_by" value="diachronic">Diachronic</input>
+        <input id="combine_periods__simultaneous" class="combine_periods_opt" type="radio" name="combined_periods_by" value="simultaneous">Simultaneous</input>
+
+        
 
 <!--         <br/>
 
@@ -292,7 +293,14 @@ function eg6() {
     <!-- </center> -->
     <div id="loading_msg"></div>
   <!-- </center> -->
-{%block content %}{%endblock %}
+  <div id="linegraph"></div>
+{%block content %}
+
+
+
+
+
+{%endblock %}
 
 
 

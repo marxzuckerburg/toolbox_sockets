@@ -48,7 +48,11 @@ W2V_MODELS = {
 		"fn": "models/ECCO_byquartercentury/model.txt.gz",
 		'periods':['1700','1725','1750','1775'],
 		'periods_nice':['1700-1725','1725-1750','1750-1775','1775-1800'],
-		"corpus_desc":"ECCO (Eighteenth Century Collections Online)"
+		"corpus_desc":"ECCO (Eighteenth Century Collections Online)",
+		# 'fn_freqs':"/Users/ryan/DH/keydata/data/db/freqs/ECCO/data.by_word.h5",
+		# 'fn_meta':"/Users/ryan/DH/keydata/data/db/freqs/ECCO/data.metadata.h5"
+		'fn_freqs':"models/ECCO_byquartercentury/data.by_word.h5",
+		'fn_meta':"models/ECCO_byquartercentury/data.metadata.h5"
 	}
 }
 

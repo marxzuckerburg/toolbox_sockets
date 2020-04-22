@@ -615,6 +615,20 @@ max-width: 960px
 
 #period_title_above_graph a { text-decoration: none }
 
+a.blacklink { text-decoration: none; color:black; }
 
 
 
+
+
+
+#linegraph {  width: 800px; height: 600px  }
+
+
+
+#linegraph_title { margin-top:10px;
+  font-size:1.2em;
+  margin-bottom:10px;
+}
+
+#linegraph { display:none; }

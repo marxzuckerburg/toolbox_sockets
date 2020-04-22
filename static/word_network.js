@@ -11,6 +11,7 @@ var COLORS10 = ['#e07a43','#c38331','#a4892b','#858c33','#668d42','#488b54','#29
 // var COLORS = ['#001021','#034748','#1481BA','#27BFE0', "#F2E2D2"]
 
 var COLORS = ['#681D23','#d15b18','#30A362','#27AADD']
+// var COLORS = ['#27AADD', '#24DAA7', '#22D73E', '#68D41F', "#CAD11D", "#CE701B", "#CC1927"]
 // COLORS.reverse()
 
 // for shortest path:

@@ -698,6 +698,17 @@ def deperiodize_str(wordstr):
 	return (''.join(new_word_pieces), periods[0] if periods else '')
 
 
+def deperiodize_l(word_l):
+	new_word_l=[]
+	for word in word_l:
+		w,p = deperiodize_str(word)
+		for ww in split_words_only(w):
+			if not ww in new_word_l:
+				new_word_l+=[ww]
+	return new_word_l
+
+
+
 def average_periods(word_ld,word_key='word',period_key='period',periods=None):
 	import pandas as pd
 	word_df=pd.DataFrame(word_ld)
