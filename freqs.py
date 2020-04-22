@@ -12,7 +12,7 @@ def get_df_sums(hdf_fn, total_key='_totals'):
 		print('>> loading freq sums...')
 		df_meta=get_df_meta(hdf_fn)
 		print('meta cols:',df_meta.columns)
-		fn2sums[hdf_fn]=df_meta.groupby(('year','genre')).sum().fillna(0)
+		fn2sums[hdf_fn]=df_meta.groupby(['year','genre']).sum().fillna(0)
 	return fn2sums[hdf_fn]
 
 def get_df_meta(hdf_fn, meta_key='_metadata'):
