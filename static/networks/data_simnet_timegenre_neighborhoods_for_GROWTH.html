@@ -1,0 +1,205 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css" type="text/css" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js"> </script>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+
+<style type="text/css">
+
+        #mynetwork {
+            width: 95%;
+            height: 100%;
+            background-color: #ffffff;
+            border: 1px solid lightgray;
+            position: relative;
+            float: left;
+        }
+
+        
+        #loadingBar {
+            position:absolute;
+            top:0px;
+            left:0px;
+            width: 95%;
+            height: 100%;
+            background-color:rgba(200,200,200,0.8);
+            -webkit-transition: all 0.5s ease;
+            -moz-transition: all 0.5s ease;
+            -ms-transition: all 0.5s ease;
+            -o-transition: all 0.5s ease;
+            transition: all 0.5s ease;
+            opacity:1;
+        }
+
+        #bar {
+            position:absolute;
+            top:0px;
+            left:0px;
+            width:20px;
+            height:20px;
+            margin:auto auto auto auto;
+            border-radius:11px;
+            border:2px solid rgba(30,30,30,0.05);
+            background: rgb(0, 173, 246); /* Old browsers */
+            box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+        }
+
+        #border {
+            position:absolute;
+            top:10px;
+            left:10px;
+            width:500px;
+            height:23px;
+            margin:auto auto auto auto;
+            box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+            border-radius:10px;
+        }
+
+        #text {
+            position:absolute;
+            top:8px;
+            left:530px;
+            width:30px;
+            height:50px;
+            margin:auto auto auto auto;
+            font-size:22px;
+            color: #000000;
+        }
+
+        div.outerBorder {
+            position:relative;
+            top:400px;
+            width:600px;
+            height:44px;
+            margin:auto auto auto auto;
+            border:8px solid rgba(0,0,0,0.1);
+            background: rgb(252,252,252); /* Old browsers */
+            background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+            background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+            background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+            background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+            background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+            background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+            border-radius:72px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+        }
+        
+
+        
+
+        
+</style>
+
+</head>
+
+<body>
+<div id = "mynetwork"></div>
+
+<div id="loadingBar">
+    <div class="outerBorder">
+        <div id="text">0%</div>
+        <div id="border">
+            <div id="bar"></div>
+        </div>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    // initialize global variables.
+    var edges;
+    var nodes;
+    var network; 
+    var container;
+    var options, data;
+
+    
+    // This method is responsible for drawing the graph, returns the drawn network
+    function drawGraph() {
+        var container = document.getElementById('mynetwork');
+        
+        
+
+        // parsing and collecting nodes and edges from the python
+        nodes = new vis.DataSet([{"color": "#FF851B", "id": "1700_GenRef", "label": "1700_GenRef", "node_type": "model", "shape": "dot", "size": 11.428431103326194}, {"color": "#3D9970", "id": "soil", "label": "soil", "node_type": "word", "shape": "dot", "size": 4.960399222680097}, {"color": "#3D9970", "id": "decay", "label": "decay", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "nourishment", "label": "nourishment", "node_type": "word", "shape": "dot", "size": 4.856223019641462}, {"color": "#3D9970", "id": "increase", "label": "increase", "node_type": "word", "shape": "dot", "size": 3.2256437802589195}, {"color": "#3D9970", "id": "enlarged", "label": "enlarged", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "circulation", "label": "circulation", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "fruits", "label": "fruits", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "native", "label": "native", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "strength", "label": "strength", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1700_Law", "label": "1700_Law", "node_type": "model", "shape": "dot", "size": 50}, {"color": "#3D9970", "id": "imported", "label": "imported", "node_type": "word", "shape": "dot", "size": 7.046825396825393}, {"color": "#3D9970", "id": "wines", "label": "wines", "node_type": "word", "shape": "dot", "size": 8.70456391560397}, {"color": "#3D9970", "id": "fish", "label": "fish", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "salt", "label": "salt", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "coals", "label": "coals", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "tobacco", "label": "tobacco", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "wool", "label": "wool", "node_type": "word", "shape": "dot", "size": 15.223261066079473}, {"color": "#3D9970", "id": "growing", "label": "growing", "node_type": "word", "shape": "dot", "size": 50}, {"color": "#3D9970", "id": "commodities", "label": "commodities", "node_type": "word", "shape": "dot", "size": 8.698695233895858}, {"color": "#3D9970", "id": "wine", "label": "wine", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1700_MedSciTech", "label": "1700_MedSciTech", "node_type": "model", "shape": "dot", "size": 11.012548452680194}, {"color": "#3D9970", "id": "trees", "label": "trees", "node_type": "word", "shape": "dot", "size": 5.281147671374246}, {"color": "#3D9970", "id": "buds", "label": "buds", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "yearly", "label": "yearly", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "stocks", "label": "stocks", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "shoots", "label": "shoots", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "sap", "label": "sap", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "plants", "label": "plants", "node_type": "word", "shape": "dot", "size": 15.595775472352145}, {"color": "#3D9970", "id": "planting", "label": "planting", "node_type": "word", "shape": "dot", "size": 4.9896296360223165}, {"color": "#3D9970", "id": "fruit", "label": "fruit", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "sowing", "label": "sowing", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1700_SSAndFineArt", "label": "1700_SSAndFineArt", "node_type": "model", "shape": "dot", "size": 9.929981064467999}, {"color": "#3D9970", "id": "manufactures", "label": "manufactures", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "woollen", "label": "woollen", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "silks", "label": "silks", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "silk", "label": "silk", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "consumption", "label": "consumption", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "importation", "label": "importation", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "commodity", "label": "commodity", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "import", "label": "import", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1725_MedSciTech", "label": "1725_MedSciTech", "node_type": "model", "shape": "dot", "size": 10.074319663672958}, {"color": "#3D9970", "id": "thrive", "label": "thrive", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "culture", "label": "culture", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "vines", "label": "vines", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "plant", "label": "plant", "node_type": "word", "shape": "dot", "size": 4.2298228741491055}, {"color": "#3D9970", "id": "soils", "label": "soils", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1725_SSAndFineArt", "label": "1725_SSAndFineArt", "node_type": "model", "shape": "dot", "size": 5.222655128628009}, {"color": "#3D9970", "id": "flax", "label": "flax", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "exportation", "label": "exportation", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "manufacture", "label": "manufacture", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "markets", "label": "markets", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "plantations", "label": "plantations", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1750_GenRef", "label": "1750_GenRef", "node_type": "model", "shape": "dot", "size": 9.911149195333916}, {"color": "#3D9970", "id": "roots", "label": "roots", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "feeding", "label": "feeding", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "tree", "label": "tree", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "cultivated", "label": "cultivated", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "branches", "label": "branches", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1750_Law", "label": "1750_Law", "node_type": "model", "shape": "dot", "size": 9.706970313861932}, {"color": "#3D9970", "id": "exported", "label": "exported", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "brandy", "label": "brandy", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "landing", "label": "landing", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "malt", "label": "malt", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "wrought", "label": "wrought", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1750_MedSciTech", "label": "1750_MedSciTech", "node_type": "model", "shape": "dot", "size": 25.013234907588956}, {"color": "#3D9970", "id": "flowering", "label": "flowering", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "shoot", "label": "shoot", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "decayed", "label": "decayed", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "vegetation", "label": "vegetation", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1750_RelandPhil", "label": "1750_RelandPhil", "node_type": "model", "shape": "dot", "size": 11.708126526938411}, {"color": "#3D9970", "id": "progress", "label": "progress", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "fruitful", "label": "fruitful", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "spring", "label": "spring", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "vigour", "label": "vigour", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "regular", "label": "regular", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "improve", "label": "improve", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "habits", "label": "habits", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1750_SSAndFineArt", "label": "1750_SSAndFineArt", "node_type": "model", "shape": "dot", "size": 6.47909433215808}, {"color": "#3D9970", "id": "hemp", "label": "hemp", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "raw", "label": "raw", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1775_GenRef", "label": "1775_GenRef", "node_type": "model", "shape": "dot", "size": 20.094391422640637}, {"color": "#3D9970", "id": "grow", "label": "grow", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "autumn", "label": "autumn", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "sown", "label": "sown", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "weeds", "label": "weeds", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "crop", "label": "crop", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1775_Law", "label": "1775_Law", "node_type": "model", "shape": "dot", "size": 10.186453792486152}, {"color": "#3D9970", "id": "sugar", "label": "sugar", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "colonies", "label": "colonies", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "merchandise", "label": "merchandise", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "flour", "label": "flour", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1775_MedSciTech", "label": "1775_MedSciTech", "node_type": "model", "shape": "dot", "size": 10.306150447383578}, {"color": "#3D9970", "id": "maturity", "label": "maturity", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "pruning", "label": "pruning", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "hoots", "label": "hoots", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "nursery", "label": "nursery", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1775_RelandPhil", "label": "1775_RelandPhil", "node_type": "model", "shape": "dot", "size": 13.48135125073222}, {"color": "#3D9970", "id": "increasing", "label": "increasing", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#3D9970", "id": "exertion", "label": "exertion", "node_type": "word", "shape": "dot", "size": 3}, {"color": "#FF851B", "id": "1775_SSAndFineArt", "label": "1775_SSAndFineArt", "node_type": "model", "shape": "dot", "size": 6.300765329443641}, {"color": "#3D9970", "id": "export", "label": "export", "node_type": "word", "shape": "dot", "size": 3}]);
+        edges = new vis.DataSet([{"from": "1700_GenRef", "to": "soil"}, {"from": "1700_GenRef", "to": "decay"}, {"from": "1700_GenRef", "to": "nourishment"}, {"from": "1700_GenRef", "to": "increase"}, {"from": "1700_GenRef", "to": "enlarged"}, {"from": "1700_GenRef", "to": "circulation"}, {"from": "1700_GenRef", "to": "fruits"}, {"from": "1700_GenRef", "to": "native"}, {"from": "1700_GenRef", "to": "strength"}, {"from": "soil", "to": "1750_GenRef"}, {"from": "soil", "to": "1775_GenRef"}, {"from": "decay", "to": "1775_MedSciTech"}, {"from": "nourishment", "to": "1725_MedSciTech"}, {"from": "nourishment", "to": "1750_MedSciTech"}, {"from": "increase", "to": "1750_RelandPhil"}, {"from": "1700_Law", "to": "imported"}, {"from": "1700_Law", "to": "wines"}, {"from": "1700_Law", "to": "fish"}, {"from": "1700_Law", "to": "salt"}, {"from": "1700_Law", "to": "coals"}, {"from": "1700_Law", "to": "tobacco"}, {"from": "1700_Law", "to": "wool"}, {"from": "1700_Law", "to": "growing"}, {"from": "1700_Law", "to": "commodities"}, {"from": "1700_Law", "to": "wine"}, {"from": "imported", "to": "1750_Law"}, {"from": "imported", "to": "1775_Law"}, {"from": "wines", "to": "1750_Law"}, {"from": "wines", "to": "1750_SSAndFineArt"}, {"from": "tobacco", "to": "1775_SSAndFineArt"}, {"from": "wool", "to": "1700_SSAndFineArt"}, {"from": "wool", "to": "1725_SSAndFineArt"}, {"from": "wool", "to": "1750_Law"}, {"from": "wool", "to": "1775_SSAndFineArt"}, {"from": "growing", "to": "1750_MedSciTech"}, {"from": "growing", "to": "1750_RelandPhil"}, {"from": "growing", "to": "1775_GenRef"}, {"from": "growing", "to": "1775_RelandPhil"}, {"from": "commodities", "to": "1700_SSAndFineArt"}, {"from": "commodities", "to": "1775_Law"}, {"from": "1700_MedSciTech", "to": "trees"}, {"from": "1700_MedSciTech", "to": "buds"}, {"from": "1700_MedSciTech", "to": "yearly"}, {"from": "1700_MedSciTech", "to": "stocks"}, {"from": "1700_MedSciTech", "to": "shoots"}, {"from": "1700_MedSciTech", "to": "sap"}, {"from": "1700_MedSciTech", "to": "plants"}, {"from": "1700_MedSciTech", "to": "planting"}, {"from": "1700_MedSciTech", "to": "fruit"}, {"from": "1700_MedSciTech", "to": "sowing"}, {"from": "trees", "to": "1725_MedSciTech"}, {"from": "trees", "to": "1750_GenRef"}, {"from": "trees", "to": "1775_GenRef"}, {"from": "shoots", "to": "1750_GenRef"}, {"from": "shoots", "to": "1775_MedSciTech"}, {"from": "plants", "to": "1725_MedSciTech"}, {"from": "plants", "to": "1750_GenRef"}, {"from": "plants", "to": "1750_MedSciTech"}, {"from": "plants", "to": "1775_MedSciTech"}, {"from": "plants", "to": "1775_RelandPhil"}, {"from": "planting", "to": "1725_MedSciTech"}, {"from": "planting", "to": "1750_MedSciTech"}, {"from": "planting", "to": "1775_MedSciTech"}, {"from": "fruit", "to": "1725_MedSciTech"}, {"from": "1700_SSAndFineArt", "to": "manufactures"}, {"from": "1700_SSAndFineArt", "to": "woollen"}, {"from": "1700_SSAndFineArt", "to": "silks"}, {"from": "1700_SSAndFineArt", "to": "silk"}, {"from": "1700_SSAndFineArt", "to": "consumption"}, {"from": "1700_SSAndFineArt", "to": "importation"}, {"from": "1700_SSAndFineArt", "to": "commodity"}, {"from": "1700_SSAndFineArt", "to": "import"}, {"from": "manufactures", "to": "1725_SSAndFineArt"}, {"from": "manufactures", "to": "1750_SSAndFineArt"}, {"from": "manufactures", "to": "1775_SSAndFineArt"}, {"from": "woollen", "to": "1750_SSAndFineArt"}, {"from": "woollen", "to": "1775_SSAndFineArt"}, {"from": "consumption", "to": "1725_SSAndFineArt"}, {"from": "consumption", "to": "1750_SSAndFineArt"}, {"from": "consumption", "to": "1775_SSAndFineArt"}, {"from": "importation", "to": "1725_SSAndFineArt"}, {"from": "importation", "to": "1750_Law"}, {"from": "importation", "to": "1775_Law"}, {"from": "importation", "to": "1775_SSAndFineArt"}, {"from": "1725_MedSciTech", "to": "thrive"}, {"from": "1725_MedSciTech", "to": "culture"}, {"from": "1725_MedSciTech", "to": "vines"}, {"from": "1725_MedSciTech", "to": "plant"}, {"from": "1725_MedSciTech", "to": "soils"}, {"from": "plant", "to": "1750_GenRef"}, {"from": "plant", "to": "1750_MedSciTech"}, {"from": "plant", "to": "1775_GenRef"}, {"from": "1725_SSAndFineArt", "to": "flax"}, {"from": "1725_SSAndFineArt", "to": "exportation"}, {"from": "1725_SSAndFineArt", "to": "manufacture"}, {"from": "1725_SSAndFineArt", "to": "markets"}, {"from": "1725_SSAndFineArt", "to": "plantations"}, {"from": "flax", "to": "1750_SSAndFineArt"}, {"from": "exportation", "to": "1750_Law"}, {"from": "exportation", "to": "1750_SSAndFineArt"}, {"from": "exportation", "to": "1775_Law"}, {"from": "exportation", "to": "1775_SSAndFineArt"}, {"from": "manufacture", "to": "1750_SSAndFineArt"}, {"from": "manufacture", "to": "1775_SSAndFineArt"}, {"from": "plantations", "to": "1775_Law"}, {"from": "1750_GenRef", "to": "roots"}, {"from": "1750_GenRef", "to": "feeding"}, {"from": "1750_GenRef", "to": "tree"}, {"from": "1750_GenRef", "to": "cultivated"}, {"from": "1750_GenRef", "to": "branches"}, {"from": "roots", "to": "1750_MedSciTech"}, {"from": "roots", "to": "1775_GenRef"}, {"from": "1750_Law", "to": "exported"}, {"from": "1750_Law", "to": "brandy"}, {"from": "1750_Law", "to": "landing"}, {"from": "1750_Law", "to": "malt"}, {"from": "1750_Law", "to": "wrought"}, {"from": "exported", "to": "1775_Law"}, {"from": "exported", "to": "1775_SSAndFineArt"}, {"from": "1750_MedSciTech", "to": "flowering"}, {"from": "1750_MedSciTech", "to": "shoot"}, {"from": "1750_MedSciTech", "to": "decayed"}, {"from": "1750_MedSciTech", "to": "vegetation"}, {"from": "flowering", "to": "1775_MedSciTech"}, {"from": "shoot", "to": "1775_MedSciTech"}, {"from": "1750_RelandPhil", "to": "progress"}, {"from": "1750_RelandPhil", "to": "fruitful"}, {"from": "1750_RelandPhil", "to": "spring"}, {"from": "1750_RelandPhil", "to": "vigour"}, {"from": "1750_RelandPhil", "to": "regular"}, {"from": "1750_RelandPhil", "to": "improve"}, {"from": "1750_RelandPhil", "to": "habits"}, {"from": "progress", "to": "1775_RelandPhil"}, {"from": "spring", "to": "1775_RelandPhil"}, {"from": "vigour", "to": "1775_RelandPhil"}, {"from": "habits", "to": "1775_RelandPhil"}, {"from": "1750_SSAndFineArt", "to": "hemp"}, {"from": "1750_SSAndFineArt", "to": "raw"}, {"from": "1775_GenRef", "to": "grow"}, {"from": "1775_GenRef", "to": "autumn"}, {"from": "1775_GenRef", "to": "sown"}, {"from": "1775_GenRef", "to": "weeds"}, {"from": "1775_GenRef", "to": "crop"}, {"from": "1775_Law", "to": "sugar"}, {"from": "1775_Law", "to": "colonies"}, {"from": "1775_Law", "to": "merchandise"}, {"from": "1775_Law", "to": "flour"}, {"from": "1775_MedSciTech", "to": "maturity"}, {"from": "1775_MedSciTech", "to": "pruning"}, {"from": "1775_MedSciTech", "to": "hoots"}, {"from": "1775_MedSciTech", "to": "nursery"}, {"from": "1775_RelandPhil", "to": "increasing"}, {"from": "1775_RelandPhil", "to": "exertion"}, {"from": "1775_SSAndFineArt", "to": "export"}]);
+
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": false,
+            "type": "continuous"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+        
+        
+
+        // default to using dot shape for nodes
+        options.nodes = {
+            shape: "dot"
+        }
+        
+
+        network = new vis.Network(container, data, options);
+
+        
+
+
+        
+        network.on("stabilizationProgress", function(params) {
+      		document.getElementById('loadingBar').removeAttribute("style");
+	        var maxWidth = 496;
+	        var minWidth = 20;
+	        var widthFactor = params.iterations/params.total;
+	        var width = Math.max(minWidth,maxWidth * widthFactor);
+
+	        document.getElementById('bar').style.width = width + 'px';
+	        document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+	    });
+	    network.once("stabilizationIterationsDone", function() {
+	        document.getElementById('text').innerHTML = '100%';
+	        document.getElementById('bar').style.width = '496px';
+	        document.getElementById('loadingBar').style.opacity = 0;
+	        // really clean the dom element
+	        setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+	    });
+        
+
+        return network;
+
+    }
+
+    drawGraph();
+
+</script>
+</body>
+</html>
