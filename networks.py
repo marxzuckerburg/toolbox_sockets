@@ -1,4 +1,4 @@
-from graph_tool.all import *
+#from graph_tool.all import *
 from app_config import *
 import time
 from collections import defaultdict
@@ -156,7 +156,7 @@ class GraphToolDB(object):
 	def filter_edges(self,prop_name,min_prop_val=None,max_prop_val=None):
 		#self.gt.set_edge_filter(None)
 
-		self.log(f'filtering edges for {prop_name} ({min_prop_val} < x < {max_prop_val}) ...')
+		self.log('filtering edges for {prop_name} ({min_prop_val} < x < {max_prop_val}) ...')
 		now=time.time()
 
 		eprop_id=(prop_name,min_prop_val,max_prop_val)

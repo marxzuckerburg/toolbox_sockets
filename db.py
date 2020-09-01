@@ -1,4 +1,4 @@
-from graph_tool.all import *
+#from graph_tool.all import *
 
 from app_config import *
 import os

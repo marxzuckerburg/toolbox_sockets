@@ -93,7 +93,7 @@ class Embedding(object):
 		return self._distnet
 
 	def get_distnet_fn(self,period=None,n_top=DEFAULT_N_TOP):
-		return os.path.join(DB_DIR,self.id,DB_NAMESPACE_DISTS+f'.period={period}.n_top={n_top}.gt')
+		return os.path.join(DB_DIR,self.id,DB_NAMESPACE_DISTS+'.period={period}.n_top={n_top}.gt'.format(period=period, n_top=n_top))
 
 	def get_distnet(self,period=None,n_top=DEFAULT_N_TOP):
 		from networks import GraphToolDB
@@ -152,7 +152,7 @@ class Embedding(object):
 				print(within_period, dfdistQ.columns)
 
 			for n_top in n_tops:
-				self.log(f'>> gen distnet for period={within_period} & n_top={n_top}')
+				self.log('>> gen distnet for period={within_period} & n_top={n_top}'.format(within_period=within_period, n_top=n_top))
 
 				# insert?
 				now=time.time()
@@ -194,9 +194,9 @@ class Embedding(object):
 				# save net
 				dbfn=os.path.join(DB_DIR,self.id,DB_NAMESPACE_DISTS)
 				#if within_period:
-				dbfn+=f'.period={within_period}'
+				dbfn+='.period={within_period}'.format(within_period=within_period)
 				#if n_top: 
-				dbfn+=f'.n_top={n_top}'
+				dbfn+='.n_top={n_top}'.format(n_top=n_top)
 				dbfn+='.gt'
 				if not os.path.exists(os.path.dirname(dbfn)): os.makedirs(os.path.dirname(dbfn))
 				g.save(dbfn,fmt='gt')
@@ -261,7 +261,7 @@ class Embedding(object):
 		
 		cached_formula_vec=self.get_vector_from_db(formula_str_q)
 		if cached_formula_vec is not None: 
-			self.log(f'\tfound cache of {formula_str_q}, returning')
+			self.log('\tfound cache of {formula_str_q}, returning'.format(formula_str_q=formula_str_q))
 			return cached_formula_vec
 
 		self.log('\tdid not find cache, must be either a formula or alternatively dated')
@@ -271,13 +271,13 @@ class Embedding(object):
 		uncached_vecs=[]
 	
 		for w in words_involved:
-			self.log(f'\t\tlooking for cache of word component: {w}')
+			self.log('\t\tlooking for cache of word component: {w}'.format(w=w))
 			cached_word_vec = self.get_vector_from_db(w)
 			if cached_word_vec is not None:
-				self.log(f'\t\t\tfound cache of {w}, adding to component word2vecs dictionary')
+				self.log('\t\t\tfound cache of {w}, adding to component word2vecs dictionary'.format(w=w))
 				word2vecs[w]=cached_word_vec
 			else:
-				self.log(f'\t\t\tdid not find cache of "{w}", must be alt-dated')
+				self.log('\t\t\tdid not find cache of "{w}", must be alt-dated'.format(w=w))
 
 				#  still no cache?
 				#  maybe it has no period and we need to periodize
@@ -287,10 +287,10 @@ class Embedding(object):
 				w_periodized = periodize([w],self.periods)
 				self.log('\t\t\t\treperiodized string into {0}'.format(', '.join(w_periodized)))
 				for word_period in w_periodized:
-					self.log(f'\t\t\t\tlooking for cache of word_period component {word_period}')
+					self.log('\t\t\t\tlooking for cache of word_period component {word_period}'.format(word_period=word_period))
 					cached_word_period_vec = self.get_vector_from_db(word_period)
 					if cached_word_period_vec is not None:
-						self.log(f'\t\t\t\t\tfound cache of "{word_period}", adding to word_vecs_to_avg')
+						self.log('\t\t\t\t\tfound cache of "{word_period}", adding to word_vecs_to_avg'.format(word_period=word_period))
 						word_vecs_to_avg.append(cached_word_period_vec)
 				# print('w?',word_vecs_to_avg)
 				self.log('\t\t\t\taveraging {0} vectors for {1}'.format(len(word_vecs_to_avg), w))
@@ -323,7 +323,7 @@ class Embedding(object):
 				self.log('expanding words for formula: '+word_or_formula)
 				w1,w2 = word_or_formula.split(sep,1)
 				w1,w2=w1.strip(),w2.strip()
-				self.log(f'finding shortest path from {w1} to {w2}')
+				self.log('finding shortest path from {w1} to {w2}'.format(w1=w1,w2=w2))
 
 				period_for_distnet = None
 				if combine_periods=='diachronic':
@@ -338,7 +338,7 @@ class Embedding(object):
 				distnet = self.get_distnet(period=period_for_distnet,n_top=n_top)
 				
 				path=distnet.shortest_path(w1,w2)
-				self.log(f'found path: {path}')
+				self.log('found path: {path}'.format(path=path))
 
 				if path:
 					new_words+=path
